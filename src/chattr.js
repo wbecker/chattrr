@@ -34,16 +34,10 @@
   clients = {};
 
   f.createConnection = function (client) {
-    var setName, sendMessage;
-    util.log('connected');
-
+    var address = client.connection.address();
     clients[client.sessionId] = client;
-   
-    (function () {
-      var address = client.connection.address();
-      client.name = address.address + ":" + address.port;
-    }());
-
+    client.name = address.address + ":" + address.port;
+    util.log(client.name + 'connected');
     client.on('message', f.handleMessage(client));
     client.on('disconnect', f.handleDisconnect(client)); 
   };
