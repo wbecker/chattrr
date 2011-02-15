@@ -35,6 +35,7 @@ var startSockets = function () {
 };
 (function () {
   var out, inputHolder, input, send;
+//    <link rel="stylesheet" type="text/css" href="client.css" />
 
   out = document.createElement("div");
   out.id = "out";
