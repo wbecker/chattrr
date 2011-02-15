@@ -36,11 +36,12 @@
     util.log('connected');
     
     client.on('message', function (message) { 
-      var sessionId;
+      var sessionId, toSend, now = new Date();
       util.log('message: ' + message); 
+      toSend = now.toLocaleTimeString() + ": " + message;
       for (sessionId in clients) {
         if (clients.hasOwnProperty(sessionId)) {
-          clients[sessionId].send(message);
+          clients[sessionId].send(toSend);
         }
       }
     });
