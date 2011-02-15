@@ -1,26 +1,17 @@
 <html>
-  <head><title>chattr</title></head>
+  <head>
+    <title>chattr</title>
+    <link rel="stylesheet" type="text/css" href="http://meyerweb.com/eric/tools/css/reset/reset.css" />
+    <link rel="stylesheet" type="text/css" href="client.css" />
+  </head>
   <body>
-    <textarea id='out'></textarea>
-    <input type='text' id='in' />
-    <input type='button' id='send' value="send"/>
+    <div id='out'></div>
+    <div id="inputHolder">
+      <input type='text' id='in' />
+      <input type='button' id='send' value="send"/>
+    </div>
     <script src="../../socket.io/socket.io.js"></script>
-    <script>
-      var socket = new io.Socket();
-      socket.connect();
-      socket.on('connect', function () { 
-      })
-      socket.on('message', function(message) { 
-        document.getElementById("out").value+=message+"\n";
-      })
-      socket.on('disconnect', function(){ console.debug("disconnected", arguments); })
-
-      document.getElementById('send').addEventListener('click', 
-        function () {
-          var text = document.getElementById('in').value;
-          socket.send(text);
-        }, false);
-    </script>
+    <script src="client.js"></script>
   </body>
 </html>
 
