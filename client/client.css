@@ -1,0 +1,33 @@
+#out {
+  top: 0;
+  bottom: 2em;
+  position: fixed;
+  overflow-y: scroll;
+  width: 100%;
+}
+.message {
+  padding: 0.125em;
+}
+.message:nth-child(odd) {
+}
+.message:nth-child(even) {
+  background-color: #DDDDFF;
+}
+#inputHolder {
+  position: fixed;
+  width: 100%;
+  height: 2em;
+  bottom: 0;
+}
+#in {
+  border: 0.25em solid #BBBBBB;
+  font-size: 1em;
+  height: 2em;
+  width: 100%;
+}
+#send {
+  border: 0.25em solid #BBBBBB;
+  bottom: 0;
+  position: fixed;
+  right: 0;
+} 
