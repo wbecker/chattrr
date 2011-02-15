@@ -1,0 +1,26 @@
+<html>
+  <head><title>chattr</title></head>
+  <body>
+    <textarea id='out'></textarea>
+    <input type='text' id='in' />
+    <input type='button' id='send' value="send"/>
+    <script src="../../socket.io/socket.io.js"></script>
+    <script>
+      var socket = new io.Socket();
+      socket.connect();
+      socket.on('connect', function () { 
+      })
+      socket.on('message', function(message) { 
+        document.getElementById("out").value+=message+"\n";
+      })
+      socket.on('disconnect', function(){ console.debug("disconnected", arguments); })
+
+      document.getElementById('send').addEventListener('click', 
+        function () {
+          var text = document.getElementById('in').value;
+          socket.send(text);
+        }, false);
+    </script>
+  </body>
+</html>
+
