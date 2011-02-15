@@ -6,7 +6,9 @@
       io = require('../../socket.io-node'),
       fs = require('fs'),
       util = require('util'),
-      server, socket, clients;
+      server, socket, clients,
+      f = {};
+
   server = http.createServer(function (req, res) {
     util.log(req.url);
     var url = req.url;
@@ -31,24 +33,63 @@
 
   clients = {};
 
-  socket.on('connection', function (client) {
-    clients[client.sessionId] = client;
+  f.createConnection = function (client) {
+    var setName, sendMessage;
     util.log('connected');
-    
-    client.on('message', function (message) { 
-      var sessionId, toSend, now = new Date();
+
+    clients[client.sessionId] = client;
+   
+    (function () {
+      var address = client.connection.address();
+      client.name = address.address + ":" + address.port;
+    }());
+
+    client.on('message', f.handleMessage(client));
+    client.on('disconnect', f.handleDisconnect(client)); 
+  };
+  f.handleMessage = function (client) {
+    return function (message) { 
+      var toSend, broadcast = false, now = new Date();
       util.log('message: ' + message); 
-      toSend = now.toLocaleTimeString() + ": " + message;
+      if (message.match(/^set name:/)) {
+        toSend = f.setName(client, message);
+      }
+      else if (message.match(/^help$/)) {
+        toSend = "set name: <name>";
+        broadcast = false;
+      }
+      else {
+        toSend = message;
+      }
+      toSend = client.name + "@" + now.toLocaleTimeString() + ": " + toSend;
+      f.sendMessage(toSend, client, broadcast); 
+    };
+  };
+  f.setName = function (client, message) {
+    var name, oldName;
+    name = message.substring(10).trim(); 
+    oldName = client.name;
+    client.name = name;
+    return "\"" + oldName + "\" is now called \"" + name + "\""; 
+  }; 
+  f.sendMessage = function (toSend, client, broadcast) {
+    var sessionId;
+    if (broadcast) {
       for (sessionId in clients) {
         if (clients.hasOwnProperty(sessionId)) {
           clients[sessionId].send(toSend);
         }
       }
-    });
-
-    client.on('disconnect', function () { 
+    }
+    else {
+      client.send(toSend);
+    } 
+  };
+  f.handleDisconnect = function (client) {
+    return function () { 
       util.log('disconnected'); 
       delete clients[client.sessionId];
-    });
-  });
+    };
+  };
+  socket.on('connection', f.createConnection);
 }());
