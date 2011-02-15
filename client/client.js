@@ -10,16 +10,25 @@ socket.on('message', function (message) {
   holder.className = "message";
   holder.textContent = message;
   parent.appendChild(holder);
+  parent.scrollTop = parent.scrollHeight;
 });
 socket.on('disconnect', function () { 
   console.debug("disconnected", arguments); 
 });
 
-document.getElementById('send').addEventListener('click', 
-  function () {
+(function () {
+  var send = function () {
     var el = document.getElementById('in'),
         text = el.value;
     socket.send(text);
     el.value = "";
-  }, false);
+  };
+  document.getElementById('send').addEventListener('click', send, false);
 
+  document.getElementById("in").addEventListener("keypress",
+    function (event) {
+      if (event.which === 13) {
+        send();
+      }
+    }, false);
+}());
