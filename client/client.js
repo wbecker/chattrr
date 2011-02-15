@@ -34,16 +34,24 @@ var startSockets = function () {
   }());
 };
 (function () {
-  var out, inputHolder, input, send;
-//    <link rel="stylesheet" type="text/css" href="client.css" />
+  var style, chattr, out, inputHolder, input, send;
+  style = document.createElement("link");
+  style.rel = "stylesheet";
+  style.type = "text/css";
+  style.href = "client.css";
+  document.getElementsByTagName("head")[0].appendChild(style);
+
+  chattr = document.createElement("div");
+  chattr.id = "chattr";
+  document.body.appendChild(chattr);
 
   out = document.createElement("div");
   out.id = "out";
-  document.body.appendChild(out);
+  chattr.appendChild(out);
 
   inputHolder = document.createElement("div");
   inputHolder.id = "inputHolder";
-  document.body.appendChild(inputHolder);
+  chattr.appendChild(inputHolder);
 
   input = document.createElement("input");
   input.type = "text";
