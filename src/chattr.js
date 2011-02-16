@@ -17,7 +17,11 @@
     }
     fs.readFile('client' + url, "binary", function (err, file) {
       if (!err) {
-        res.writeHead(200, {'Content-Type': 'text/html'});
+        var content = 'text/html';
+        if (url.substring(url.lastIndexOf('.')) === ".css") {
+          content = "text/css";
+        }
+        res.writeHead(200, {'Content-Type': content});
         res.write(file, 'binary');
       }
       else {
@@ -43,7 +47,7 @@
   };
   f.handleMessage = function (client) {
     return function (message) { 
-      var toSend, broadcast = false, now = new Date();
+      var toSend, broadcast = true, now = new Date();
       util.log('message: ' + message); 
       if (message.match(/^set name:/)) {
         toSend = f.setName(client, message);
