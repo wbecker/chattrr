@@ -1,8 +1,9 @@
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, browser: true, maxerr: 5, maxlen: 80, indent: 2 */
 /*global io, console*/
-
+var myIp = "192.168.1.64";
+var port = 8000;
 var startSockets = function () {
-  var socket = new io.Socket();
+  var socket = new io.Socket(myIp, {port: port});
   socket.connect();
   socket.on('connect', function () {});
   socket.on('message', function (message) { 
@@ -38,7 +39,7 @@ var startSockets = function () {
   style = document.createElement("link");
   style.rel = "stylesheet";
   style.type = "text/css";
-  style.href = "client.css";
+  style.href = "http://" + myIp + ":" + port + "/client.css";
   document.getElementsByTagName("head")[0].appendChild(style);
 
   chattr = document.createElement("div");
@@ -68,7 +69,7 @@ var startSockets = function () {
 
 (function () {
   var script = document.createElement("script");
-  script.src = "../../socket.io/socket.io.js";
+  script.src = "http://" + myIp + ":" + port + "/socket.io/socket.io.js";
   script.onload = startSockets;
   document.body.appendChild(script);
 }());

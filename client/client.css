@@ -2,10 +2,11 @@
   position: relative;
   padding: 0;
   margin: 0;
-  font-size: 12px;
+  font-size: 15px;
   height: 15em;
   width: 100%;
   border: 1px solid #bbbbbb
+  font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif
 }
 #out {
   top: 0;
@@ -30,11 +31,12 @@
 }
 #in {
   width: 100%;
+  padding: 0;
 }
 #send {
   position: absolute;
-  bottom: 0;
   right: 0;
+  -moz-box-sizing: content-box;
 } 
 #in, #send {
   border: 0.25em solid #BBBBBB;
