@@ -1,7 +1,7 @@
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, browser: true, maxerr: 5, maxlen: 80, indent: 2 */
-/*global io, console*/
-var myIp = "192.168.1.64";
-var port = 8000;
+/*global window, io, console*/
+var myIp = window.__chattrHost;
+var port = window.__chattrPort ? parseInt(window.__chattrPort, 10) : 80;
 var startSockets = function () {
   var socket = new io.Socket(myIp, {port: port});
   socket.connect();
