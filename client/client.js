@@ -5,7 +5,9 @@ var port = 8000;
 var startSockets = function () {
   var socket = new io.Socket(myIp, {port: port});
   socket.connect();
-  socket.on('connect', function () {});
+  socket.on('connect', function () {
+    socket.send(JSON.stringify({url: document.URL}));
+  });
   socket.on('message', function (message) { 
     var parent = document.getElementById("out"),
         holder = document.createElement("div");
@@ -21,9 +23,17 @@ var startSockets = function () {
   (function () {
     var send = function () {
       var el = document.getElementById('in'),
+          msg = {}, 
           text = el.value;
-      socket.send(text);
+      if (text.match(/^set name:/)) {
+        msg.name = text.substring(10).trim(); 
+      }
+      else {
+        msg.msg = text;
+      }
+      socket.send(JSON.stringify(msg));
       el.value = "";
+      el.focus();
     };
     document.getElementById('send').addEventListener('click', send, false);
     document.getElementById("in").addEventListener("keypress",

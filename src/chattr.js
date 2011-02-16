@@ -6,7 +6,7 @@
       io = require('../../socket.io-node'),
       fs = require('fs'),
       util = require('util'),
-      server, socket, clients,
+      server, socket, clients, urls,
       f = {};
 
   server = http.createServer(function (req, res) {
@@ -36,7 +36,7 @@
   socket = io.listen(server);
 
   clients = {};
-
+  urls = {};
   f.createConnection = function (client) {
     var address = client.connection.address();
     clients[client.sessionId] = client;
@@ -46,36 +46,48 @@
     client.on('disconnect', f.handleDisconnect(client)); 
   };
   f.handleMessage = function (client) {
-    return function (message) { 
-      var toSend, broadcast = true, now = new Date();
-      util.log('message: ' + message); 
-      if (message.match(/^set name:/)) {
-        toSend = f.setName(client, message);
+    return function (rawMessage) { 
+      var message, toSend, broadcast = true, now = new Date();
+      util.log('message: ' + rawMessage); 
+      message = JSON.parse(rawMessage);
+      if (message.url) {
+        client.url = message.url;
+        if (!urls[message.url]) {
+          urls[message.url] = {history: [], clients: {}}; 
+        }
+        urls[message.url].clients[client.sessionId] = client;
       }
-      else if (message.match(/^help$/)) {
-        toSend = "set name: <name>";
-        broadcast = false;
+      if (message.name) {
+        toSend = f.setName(client, message.name);
       }
-      else {
-        toSend = message;
+      else if (message.msg) {
+        if (message.msg.match(/^help$/)) {
+          toSend = "set name: <name>";
+          broadcast = false;
+        }
+        else {
+          toSend = message.msg;
+        }
       }
-      toSend = client.name + "@" + now.toLocaleTimeString() + ": " + toSend;
-      f.sendMessage(toSend, client, broadcast); 
+      if (toSend) {
+        toSend = client.name + "@" + now.toLocaleTimeString() + ": " + toSend;
+        f.sendMessage(toSend, client, broadcast); 
+      }
     };
   };
-  f.setName = function (client, message) {
-    var name, oldName;
-    name = message.substring(10).trim(); 
+  f.setName = function (client, name) {
+    var oldName;
     oldName = client.name;
     client.name = name;
     return "\"" + oldName + "\" is now called \"" + name + "\""; 
   }; 
   f.sendMessage = function (toSend, client, broadcast) {
-    var sessionId;
+    var sessionId, localClients;
     if (broadcast) {
-      for (sessionId in clients) {
-        if (clients.hasOwnProperty(sessionId)) {
-          clients[sessionId].send(toSend);
+      localClients = urls[client.url].clients;
+      for (sessionId in localClients) {
+        if (localClients.hasOwnProperty(sessionId)) {
+          localClients[sessionId].send(toSend);
         }
       }
     }
