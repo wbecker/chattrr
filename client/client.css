@@ -38,6 +38,9 @@
   padding: 0;
   margin: 0;
 }
+#in:focus {
+  border-color: #BBBBBB !important;
+}
 #send {
   position: absolute;
   right: 0;
