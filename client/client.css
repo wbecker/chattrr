@@ -17,6 +17,7 @@
   position: absolute;
   overflow-y: scroll;
   width: 100%;
+  text-align: left;
 }
 .message {
   padding: 0.125em;
@@ -35,11 +36,14 @@
 #in {
   width: 100%;
   padding: 0;
+  margin: 0;
 }
 #send {
   position: absolute;
   right: 0;
   -moz-box-sizing: content-box;
+  padding: 0 1em 0 1em;
+  margin: 0;
 } 
 #in, #send {
   border: 0.25em solid #BBBBBB;
