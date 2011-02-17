@@ -6,11 +6,11 @@
       io = require('../../socket.io-node'),
       fs = require('fs'),
       util = require('util'),
+      _ = require("../../underscore/underscore"),
       server, socket, clients, urls,
       f = {};
 
   server = http.createServer(function (req, res) {
-    util.log(req.url);
     var url = req.url;
     if (url === "/") {
       url += "client.htm";
@@ -56,6 +56,7 @@
           urls[message.url] = {history: [], clients: {}}; 
         }
         urls[message.url].clients[client.sessionId] = client;
+        f.sendInitialHistory(client, urls[message.url]);
       }
       if (message.name) {
         toSend = f.setName(client, message.name);
@@ -67,6 +68,7 @@
         }
         else {
           toSend = message.msg;
+          urls[client.url].history.push(toSend);
         }
       }
       if (toSend) {
@@ -74,6 +76,17 @@
         f.sendMessage(toSend, client, broadcast); 
       }
     };
+  };
+  f.sendInitialHistory = function (client, url) {
+    var send = function (message) {
+      client.send(message);
+    };
+    if (url.history.length < 5) {
+      url.history.forEach(send);
+    }
+    else {
+      _(url.history).rest(-5).forEach(send);
+    }
   };
   f.setName = function (client, name) {
     var oldName;
