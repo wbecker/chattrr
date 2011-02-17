@@ -113,7 +113,7 @@
     nameVar = f.createNameVar(client);
     multi = db.multi();
     if (cb) {
-      multi.get(client, function (err, res) {
+      multi.get(nameVar, function (err, res) {
         oldName = res;
       });
     }
