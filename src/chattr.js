@@ -45,46 +45,54 @@
     clients[client.sessionId] = client;
     name = address.address + ":" + address.port;
     f.setName(client, name);
-    util.log(name + 'connected');
+    util.log(name + ' connected');
     client.on('message', f.handleMessage(client));
     client.on('disconnect', f.handleDisconnect(client)); 
   };
   f.handleMessage = function (client) {
     return function (rawMessage) { 
-      var message, broadcast = true;
       util.log('message: ' + rawMessage); 
-      message = JSON.parse(rawMessage);
-      if (message.url) {
-        client.url = message.url;
-        if (!urls[message.url]) {
-          urls[message.url] = {history: [], clients: {}}; 
-        }
-        urls[message.url].clients[client.sessionId] = client;
-        f.sendInitialHistory(client, client.url);
-      }
-      if (message.name) {
-        f.setName(client, message.name, function (oldName) {
-          var toSend = "\"" + oldName + "\" is now called \"" + 
-            message.name + "\"";
-          f.sendMessage(toSend, client);
-        });
-      }
-      else if (message.msg) {
-        if (message.msg.match(/^help$/)) {
-          f.sendMessage("set name: <name>", client);
-        }
-        else {
-          f.saveMessage(message.msg, client);
-          f.sendMessage(message.msg, client, true);
-        }
-      }
+      var message = JSON.parse(rawMessage);
+      f.handleUrl(client, message);
     };
   };
-  f.sendInitialHistory = function (client) {
+  f.handleUrl = function (client, message) {
+    var clientUrlKey = f.getClientUrlKey(client);
+    if (message.url) {
+      db.sadd(f.getMembersKey(message.url), client.sessionId);
+      db.set(clientUrlKey, message.url);
+      f.sendInitialHistory(client, message.url);
+      f.handleMessageContents(client, message, message.url);
+    }
+    else {
+      db.get(clientUrlKey, function (err, url) {
+        f.handleMessageContents(client, message, url);
+      });
+    }
+  };
+  f.handleMessageContents = function (client, message, url) {
+    if (message.name) {
+      f.setName(client, message.name, function (oldName) {
+        var toSend = "\"" + oldName + "\" is now called \"" + 
+          message.name + "\"";
+        f.sendMessage(toSend, client, url);
+      });
+    }
+    else if (message.msg) {
+      if (message.msg.match(/^help$/)) {
+        f.sendMessage("set name: <name>", client, url);
+      }
+      else {
+        f.saveMessage(message.msg, client, url);
+        f.sendMessage(message.msg, client, url, true);
+      }
+    }
+  };
+  f.sendInitialHistory = function (client, url) {
     var send = function (message) {
       client.send(message);
     };
-    db.lrange(f.getMessagesName(client.url), -5, -1, 
+    db.lrange(f.getMessagesName(url), -5, -1, 
       function (err, res) {
         res.forEach(function (msgJson) {
           var message = JSON.parse(msgJson);
@@ -119,8 +127,8 @@
   f.createNameVar = function (client) {
     return "client:" + client.sessionId + ":name";
   };
-  f.saveMessage = function (message, client) {
-    db.rpush(f.getMessagesName(client.url), 
+  f.saveMessage = function (message, client, url) {
+    db.rpush(f.getMessagesName(url), 
       JSON.stringify({
         client: client.sessionId, 
         msg: message,
@@ -131,16 +139,21 @@
   f.getMessagesName = function (url) {
     return "messages:" + url;
   };
-  f.sendMessage = function (toSend, client, broadcast) {
+  f.sendMessage = function (toSend, client, url, broadcast) {
     f.formatMessage(client, new Date(), toSend, function (message) {
-      var sessionId, localClients;
       if (broadcast) {
-        localClients = urls[client.url].clients;
-        for (sessionId in localClients) {
-          if (localClients.hasOwnProperty(sessionId)) {
-            localClients[sessionId].send(message);
-          }
-        }
+        var membersKey = f.getMembersKey(url);
+        db.smembers(membersKey, function (err, clientSessionIds) {
+          clientSessionIds.forEach(function (sessionId) {
+            if (clients.hasOwnProperty(sessionId)) {
+              clients[sessionId].send(message);
+            }
+            else {
+              //Don't know "sessionId" anymore
+              db.srem(membersKey, sessionId);
+            }
+          });
+        });
       }
       else {
         client.send(message);
@@ -155,8 +168,24 @@
   f.handleDisconnect = function (client) {
     return function () { 
       util.log('disconnected'); 
+      f.removeClient(client);
       delete clients[client.sessionId];
     };
+  };
+  f.removeClient = function (client) {
+    var clientUrlKey = f.getClientUrlKey(client),
+        multi = db.multi();
+    multi.get(clientUrlKey, function (err, url) {
+      db.srem(f.getMembersKey(url), client.sessionId);
+    });
+    multi.del(clientUrlKey);
+    multi.exec();
+  };
+  f.getMembersKey = function (url) {
+    return "board:" + url + ":clients";
+  };
+  f.getClientUrlKey = function (client) {
+    return "client:" + client.sessionId + ":url";
   };
   socket.on('connection', f.createConnection);
 }());
