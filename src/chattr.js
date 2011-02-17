@@ -60,7 +60,7 @@
           urls[message.url] = {history: [], clients: {}}; 
         }
         urls[message.url].clients[client.sessionId] = client;
-        f.sendInitialHistory(client, urls[message.url]);
+        f.sendInitialHistory(client, client.url);
       }
       if (message.name) {
         f.setName(client, message.name, function (oldName) {
@@ -74,22 +74,31 @@
           f.sendMessage("set name: <name>", client);
         }
         else {
-          urls[client.url].history.push(message.msg);
+          f.saveMessage(message.msg, client);
           f.sendMessage(message.msg, client, true);
         }
       }
     };
   };
-  f.sendInitialHistory = function (client, url) {
+  f.sendInitialHistory = function (client) {
     var send = function (message) {
       client.send(message);
     };
-    if (url.history.length < 5) {
-      url.history.forEach(send);
-    }
-    else {
-      _(url.history).rest(-5).forEach(send);
-    }
+    db.lrange(f.getMessagesName(client.url), -5, -1, 
+      function (err, res) {
+        res.forEach(function (msgJson) {
+          var message = JSON.parse(msgJson);
+          f.formatMessage(
+            {sessionId: message.client}, 
+            new Date(message.time), 
+            message.msg, 
+            function (toSend) {
+              client.send(toSend);
+            }
+          );
+        });
+      }
+    );
   };
   f.setName = function (client, name, cb) {
     var oldName, nameVar, multi;
@@ -110,21 +119,37 @@
   f.createNameVar = function (client) {
     return "client:" + client.sessionId + ":name";
   };
+  f.saveMessage = function (message, client) {
+    db.rpush(f.getMessagesName(client.url), 
+      JSON.stringify({
+        client: client.sessionId, 
+        msg: message,
+        time: new Date()
+      })
+    );
+  };
+  f.getMessagesName = function (url) {
+    return "messages:" + url;
+  };
   f.sendMessage = function (toSend, client, broadcast) {
-    db.get(f.createNameVar(client), function (err, name) {
-      var sessionId, localClients, now = new Date();
-      toSend = name + "@" + now.toLocaleTimeString() + ": " + toSend;
+    f.formatMessage(client, new Date(), toSend, function (message) {
+      var sessionId, localClients;
       if (broadcast) {
         localClients = urls[client.url].clients;
         for (sessionId in localClients) {
           if (localClients.hasOwnProperty(sessionId)) {
-            localClients[sessionId].send(toSend);
+            localClients[sessionId].send(message);
           }
         }
       }
       else {
-        client.send(toSend);
+        client.send(message);
       } 
+    });
+  };
+  f.formatMessage = function (client, time, message, cb) {
+    db.get(f.createNameVar(client), function (err, name) {
+      cb(name + "@" + time.toLocaleTimeString() + ": " + message);
     });
   };
   f.handleDisconnect = function (client) {
