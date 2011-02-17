@@ -6,10 +6,12 @@
       io = require('../../socket.io-node'),
       fs = require('fs'),
       util = require('util'),
+      redis = require("redis"),
       _ = require("../../underscore/underscore"),
-      server, socket, clients, urls,
+      db, server, socket, clients, urls,
       f = {};
 
+  db = redis.createClient();
   server = http.createServer(function (req, res) {
     var url = req.url;
     if (url === "/") {
@@ -38,16 +40,18 @@
   clients = {};
   urls = {};
   f.createConnection = function (client) {
-    var address = client.connection.address();
+    var address = client.connection.address(), 
+      name = client.connection.address();
     clients[client.sessionId] = client;
-    client.name = address.address + ":" + address.port;
-    util.log(client.name + 'connected');
+    name = address.address + ":" + address.port;
+    f.setName(client, name);
+    util.log(name + 'connected');
     client.on('message', f.handleMessage(client));
     client.on('disconnect', f.handleDisconnect(client)); 
   };
   f.handleMessage = function (client) {
     return function (rawMessage) { 
-      var message, toSend, broadcast = true, now = new Date();
+      var message, broadcast = true;
       util.log('message: ' + rawMessage); 
       message = JSON.parse(rawMessage);
       if (message.url) {
@@ -59,21 +63,20 @@
         f.sendInitialHistory(client, urls[message.url]);
       }
       if (message.name) {
-        toSend = f.setName(client, message.name);
+        f.setName(client, message.name, function (oldName) {
+          var toSend = "\"" + oldName + "\" is now called \"" + 
+            message.name + "\"";
+          f.sendMessage(toSend, client);
+        });
       }
       else if (message.msg) {
         if (message.msg.match(/^help$/)) {
-          toSend = "set name: <name>";
-          broadcast = false;
+          f.sendMessage("set name: <name>", client);
         }
         else {
-          toSend = message.msg;
-          urls[client.url].history.push(toSend);
+          urls[client.url].history.push(message.msg);
+          f.sendMessage(message.msg, client, true);
         }
-      }
-      if (toSend) {
-        toSend = client.name + "@" + now.toLocaleTimeString() + ": " + toSend;
-        f.sendMessage(toSend, client, broadcast); 
       }
     };
   };
@@ -88,25 +91,41 @@
       _(url.history).rest(-5).forEach(send);
     }
   };
-  f.setName = function (client, name) {
-    var oldName;
-    oldName = client.name;
-    client.name = name;
-    return "\"" + oldName + "\" is now called \"" + name + "\""; 
+  f.setName = function (client, name, cb) {
+    var oldName, nameVar, multi;
+    nameVar = f.createNameVar(client);
+    multi = db.multi();
+    if (cb) {
+      multi.get(client, function (err, res) {
+        oldName = res;
+      });
+    }
+    multi.set(nameVar, name, function (err, res) {
+      if (cb) {
+        cb(oldName); 
+      }
+    });
+    multi.exec();
   }; 
+  f.createNameVar = function (client) {
+    return "client:" + client.sessionId + ":name";
+  };
   f.sendMessage = function (toSend, client, broadcast) {
-    var sessionId, localClients;
-    if (broadcast) {
-      localClients = urls[client.url].clients;
-      for (sessionId in localClients) {
-        if (localClients.hasOwnProperty(sessionId)) {
-          localClients[sessionId].send(toSend);
+    db.get(f.createNameVar(client), function (err, name) {
+      var sessionId, localClients, now = new Date();
+      toSend = name + "@" + now.toLocaleTimeString() + ": " + toSend;
+      if (broadcast) {
+        localClients = urls[client.url].clients;
+        for (sessionId in localClients) {
+          if (localClients.hasOwnProperty(sessionId)) {
+            localClients[sessionId].send(toSend);
+          }
         }
       }
-    }
-    else {
-      client.send(toSend);
-    } 
+      else {
+        client.send(toSend);
+      } 
+    });
   };
   f.handleDisconnect = function (client) {
     return function () { 
