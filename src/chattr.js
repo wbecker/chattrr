@@ -174,7 +174,7 @@
   };
   f.formatMessage = function (client, time, message, cb) {
     db.get(f.createNameVar(client), function (err, name) {
-      cb(name + "@" + time.toLocaleTimeString() + ": " + message);
+      cb(JSON.stringify({name: name, time: time, msg: message}));
     });
   };
   f.handleDisconnect = function (client) {

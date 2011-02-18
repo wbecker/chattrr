@@ -27,6 +27,19 @@
 .message:nth-child(even) {
   background-color: #DDDDFF;
 }
+.message .nameHolder,
+.message .timeHolder {
+  margin-right: 0.5em;
+  color: #555555;
+}
+.message .nameHolder {
+  font-weight: bold;
+  display: inline-block;
+  min-width: 9em;
+  text-align: right;
+}
+.message .timeHolder {
+}
 #inputHolder {
   position: absolute;
   width: 100%;

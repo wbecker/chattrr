@@ -8,12 +8,24 @@ var startSockets = function () {
   socket.on('connect', function () {
     socket.send(JSON.stringify({url: document.URL}));
   });
-  socket.on('message', function (message) { 
+  socket.on('message', function (messageRaw) { 
     var parent = document.getElementById("out"),
-        holder = document.createElement("div");
+        holder = document.createElement("div"),
+        message = JSON.parse(messageRaw),
+        nameHolder = document.createElement("span"),
+        timeHolder = document.createElement("span"),
+        msgHolder = document.createElement("span");
+    nameHolder.className = "nameHolder";
+    timeHolder.className = "timeHolder";
+    msgHolder.className = "msgHolder";
+    nameHolder.textContent = message.name;
+    timeHolder.textContent = new Date(message.time).toLocaleTimeString();
+    msgHolder.textContent = message.msg;
     holder.className = "message";
-    holder.textContent = message;
     parent.appendChild(holder);
+    holder.appendChild(nameHolder);
+    holder.appendChild(timeHolder);
+    holder.appendChild(msgHolder);
     parent.scrollTop = parent.scrollHeight;
   });
   socket.on('disconnect', function () { 
