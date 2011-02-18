@@ -8,7 +8,7 @@
       util = require('util'),
       redis = require("redis"),
       _ = require("../../underscore/underscore"),
-      db, server, socket, clients, urls,
+      db, server, socket, clients,
       f = {};
 
   db = redis.createClient();
@@ -38,7 +38,6 @@
   socket = io.listen(server);
 
   clients = {};
-  urls = {};
   f.createConnection = function (client) {
     var address = client.connection.address(), 
       name = client.connection.address();
