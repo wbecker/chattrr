@@ -64,6 +64,7 @@
         if (!urlId) {
           db.incr("nextUrlId", function (err, urlId) {
             db.set("url:" + urlHash, urlId);
+            db.set("url:" + urlId + ":url", message.url);
             f.handleNewUrl(client, message, clientUrlKey, urlId);
           });
         }
@@ -80,6 +81,10 @@
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, urlId);
+    db.get("url:" + urlId + ":url", function (err, url) {
+      f.sendMessage("Welcome to chattr! You are talking on " + url, 
+        client, urlId);
+    });
     f.handleMessageContents(client, message, urlId);
   };
   f.handleMessageContents = function (client, message, urlId) {
