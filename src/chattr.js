@@ -7,6 +7,7 @@
       fs = require('fs'),
       util = require('util'),
       redis = require("redis"),
+      hash = require("hashlib"),
       _ = require("../../underscore/underscore"),
       db, server, socket, clients,
       f = {};
@@ -56,42 +57,54 @@
     };
   };
   f.handleUrl = function (client, message) {
-    var clientUrlKey = f.getClientUrlKey(client);
+    var clientUrlKey = f.getClientUrlKey(client), urlHash;
     if (message.url) {
-      db.sadd(f.getMembersKey(message.url), client.sessionId);
-      db.set(clientUrlKey, message.url);
-      f.sendInitialHistory(client, message.url);
-      f.handleMessageContents(client, message, message.url);
+      urlHash = hash.md5(message.url);
+      db.get("url:" + urlHash, function (err, urlId) {
+        if (!urlId) {
+          db.incr("nextUrlId", function (err, urlId) {
+            db.set("url:" + urlHash, urlId);
+            f.handleNewUrl(client, message, clientUrlKey, urlId);
+          });
+        }
+        f.handleNewUrl(client, message, clientUrlKey, urlId);
+      });
     }
     else {
-      db.get(clientUrlKey, function (err, url) {
-        f.handleMessageContents(client, message, url);
+      db.get(clientUrlKey, function (err, urlId) {
+        f.handleMessageContents(client, message, urlId);
       });
     }
   };
-  f.handleMessageContents = function (client, message, url) {
+  f.handleNewUrl = function (client, message, clientUrlKey, urlId) {
+    db.sadd(f.getMembersKey(urlId), client.sessionId);
+    db.set(clientUrlKey, urlId);
+    f.sendInitialHistory(client, urlId);
+    f.handleMessageContents(client, message, urlId);
+  };
+  f.handleMessageContents = function (client, message, urlId) {
     if (message.name) {
       f.setName(client, message.name, function (oldName) {
         var toSend = "\"" + oldName + "\" is now called \"" + 
           message.name + "\"";
-        f.sendMessage(toSend, client, url);
+        f.sendMessage(toSend, client, urlId);
       });
     }
     else if (message.msg) {
       if (message.msg.match(/^help$/)) {
-        f.sendMessage("set name: <name>", client, url);
+        f.sendMessage("set name: <name>", client, urlId);
       }
       else {
-        f.saveMessage(message.msg, client, url);
-        f.sendMessage(message.msg, client, url, true);
+        f.saveMessage(message.msg, client, urlId);
+        f.sendMessage(message.msg, client, urlId, true);
       }
     }
   };
-  f.sendInitialHistory = function (client, url) {
+  f.sendInitialHistory = function (client, urlId) {
     var send = function (message) {
       client.send(message);
     };
-    db.lrange(f.getMessagesName(url), -5, -1, 
+    db.lrange(f.getMessagesName(urlId), -5, -1, 
       function (err, res) {
         res.forEach(function (msgJson) {
           var message = JSON.parse(msgJson);
@@ -126,8 +139,8 @@
   f.createNameVar = function (client) {
     return "client:" + client.sessionId + ":name";
   };
-  f.saveMessage = function (message, client, url) {
-    db.rpush(f.getMessagesName(url), 
+  f.saveMessage = function (message, client, urlId) {
+    db.rpush(f.getMessagesName(urlId), 
       JSON.stringify({
         client: client.sessionId, 
         msg: message,
@@ -135,13 +148,13 @@
       })
     );
   };
-  f.getMessagesName = function (url) {
-    return "messages:" + url;
+  f.getMessagesName = function (urlId) {
+    return "messages:" + urlId;
   };
-  f.sendMessage = function (toSend, client, url, broadcast) {
+  f.sendMessage = function (toSend, client, urlId, broadcast) {
     f.formatMessage(client, new Date(), toSend, function (message) {
       if (broadcast) {
-        var membersKey = f.getMembersKey(url);
+        var membersKey = f.getMembersKey(urlId);
         db.smembers(membersKey, function (err, clientSessionIds) {
           clientSessionIds.forEach(function (sessionId) {
             if (clients.hasOwnProperty(sessionId)) {
@@ -174,14 +187,14 @@
   f.removeClient = function (client) {
     var clientUrlKey = f.getClientUrlKey(client),
         multi = db.multi();
-    multi.get(clientUrlKey, function (err, url) {
-      db.srem(f.getMembersKey(url), client.sessionId);
+    multi.get(clientUrlKey, function (err, urlId) {
+      db.srem(f.getMembersKey(urlId), client.sessionId);
     });
     multi.del(clientUrlKey);
     multi.exec();
   };
-  f.getMembersKey = function (url) {
-    return "board:" + url + ":clients";
+  f.getMembersKey = function (urlId) {
+    return "board:" + urlId + ":clients";
   };
   f.getClientUrlKey = function (client) {
     return "client:" + client.sessionId + ":url";
