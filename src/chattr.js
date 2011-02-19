@@ -77,14 +77,15 @@
     }
   };
   f.handleUrl = function (client, userToken, message) {
-    var clientUrlKey = f.getClientUrlKey(client), urlHash;
+    var clientUrlKey = f.getClientUrlKey(client), urlHash, urlIdForHashKey;
     if (message.url) {
       urlHash = hash.md5(message.url);
-      db.get("url:" + urlHash, function (err, urlId) {
+      urlIdForHashKey = f.getUrlIdForHashKey(urlHash);
+      db.get(urlIdForHashKey, function (err, urlId) {
         if (!urlId) {
-          db.incr("nextUrlId", function (err, urlId) {
-            db.set("url:" + urlHash, urlId);
-            db.set("url:" + urlId + ":url", message.url);
+          db.incr(f.getNextUrlIdKey(), function (err, urlId) {
+            db.set(urlIdForHashKey, urlId);
+            db.set(f.getUrlForUrlId(urlId), message.url);
             f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
           });
         }
@@ -97,11 +98,12 @@
       });
     }
   };
+  
   f.handleNewUrl = function (client, userToken, message, clientUrlKey, urlId) {
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
-    db.get("url:" + urlId + ":url", function (err, url) {
+    db.get(f.getUrlForUrlId(urlId), function (err, url) {
       f.sendMessage("Welcome to chattr! You are talking on " + url, 
         client, userToken, urlId);
     });
@@ -161,9 +163,6 @@
       );
     });
   };
-  f.getHistoryDepthVar = function (userToken) {
-    return "user:" + userToken + ":historyDepth";
-  };
   f.setName = function (client, name, cb) {
     db.get(f.createClientUserTokenVar(client), function (err, userToken) {
       var oldName, nameVar, multi;
@@ -182,12 +181,6 @@
       multi.exec();
     });
   }; 
-  f.createClientUserTokenVar = function (client) {
-    return "client: " + client.sessionId + ":userToken";
-  };
-  f.createNameVar = function (userToken) {
-    return "user:" + userToken + ":name";
-  };
   f.saveMessage = function (message, userToken, urlId) {
     db.rpush(f.getMessagesName(urlId), 
       JSON.stringify({
@@ -196,9 +189,6 @@
         time: new Date()
       })
     );
-  };
-  f.getMessagesName = function (urlId) {
-    return "messages:" + urlId;
   };
   f.sendMessage = function (toSend, client, userToken, urlId, broadcast) {
     f.formatMessage(userToken, new Date(), toSend, function (message) {
@@ -240,14 +230,54 @@
       db.srem(f.getMembersKey(urlId), client.sessionId);
     });
     multi.del(clientUrlKey);
-    multi.del("client:" + client.sessionId + ":user");
+    multi.del(f.createClientUserTokenVar(client));
     multi.exec();
   };
-  f.getMembersKey = function (urlId) {
-    return "board:" + urlId + ":clients";
+  socket.on('connection', f.createConnection);
+  //Redis keys
+  //"url:nextUrlId" - int 
+  //  the id to use for the next url
+  f.getNextUrlIdKey = function () {
+    return "url:nextUrlId";
   };
+  //"url:<urlId>":url" - string(url)
+  //  the actual url for the urlId
+  f.getUrlForUrlId = function (urlId) {
+    return "url:" + urlId + ":url";
+  };
+  //"url:<urlHash>:urlId" - string(hash of url)
+  //  the urlId for the given url's hash
+  f.getUrlIdForHashKey = function (urlHash) {
+    return "url:" + urlHash + ":urlId";
+  };
+  //"url:<urlId>:clients" - set(client.sessionId) 
+  //  the clients currently viewing the given url
+  f.getMembersKey = function (urlId) {
+    return "url:" + urlId + ":clients";
+  };
+  //"url:<urlId>:messages" - set(message json)
+  //  the messages saved for the given url
+  f.getMessagesName = function (urlId) {
+    return "url:" + urlId + ":messages";
+  };
+  //"user:<userToken>:name" - string 
+  //  the screen name for the given user
+  f.createNameVar = function (userToken) {
+    return "user:" + userToken + ":name";
+  };
+  //"user:<userToken>:historyDepth" - int 
+  //  how much history to show for the given user.
+  f.getHistoryDepthVar = function (userToken) {
+    return "user:" + userToken + ":historyDepth";
+  };
+  //"client:<client.sessionId>:userToken" - string 
+  //  who the client actually is
+  f.createClientUserTokenVar = function (client) {
+    return "client:" + client.sessionId + ":userToken";
+  };
+  //"client:<client.sessionId>:url" - string 
+  //  the url that the given client is viewing
   f.getClientUrlKey = function (client) {
     return "client:" + client.sessionId + ":url";
   };
-  socket.on('connection', f.createConnection);
 }());
