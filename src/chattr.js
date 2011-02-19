@@ -100,7 +100,7 @@
   f.handleNewUrl = function (client, userToken, message, clientUrlKey, urlId) {
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
-    f.sendInitialHistory(client, urlId);
+    f.sendInitialHistory(client, userToken, urlId);
     db.get("url:" + urlId + ":url", function (err, url) {
       f.sendMessage("Welcome to chattr! You are talking on " + url, 
         client, userToken, urlId);
@@ -115,9 +115,19 @@
         f.sendMessage(toSend, client, userToken, urlId);
       });
     }
+    if (message.historyCount) {
+      db.set(f.getHistoryDepthVar(userToken), message.historyCount, 
+        function () {
+          f.sendInitialHistory(client, userToken, urlId);
+        }
+      );
+    }
     else if (message.msg) {
       if (message.msg.match(/^help$/)) {
-        f.sendMessage("set name: <name>", client, userToken, urlId);
+        f.sendMessage("Available commands:", client, userToken, urlId);
+        f.sendMessage("  1. 'set name: <name>'", client, userToken, urlId);
+        f.sendMessage("  2. 'set history depth: <numberOfLines>'", client, 
+          userToken, urlId);
       }
       else {
         f.saveMessage(message.msg, userToken, urlId);
@@ -125,25 +135,34 @@
       }
     }
   };
-  f.sendInitialHistory = function (client, urlId) {
+  f.sendInitialHistory = function (client, userToken, urlId) {
     var send = function (message) {
       client.send(message);
     };
-    db.lrange(f.getMessagesName(urlId), -5, -1, 
-      function (err, res) {
-        res.forEach(function (msgJson) {
-          var message = JSON.parse(msgJson);
-          f.formatMessage(
-            message.userToken, 
-            new Date(message.time), 
-            message.msg, 
-            function (toSend) {
-              client.send(toSend);
-            }
-          );
-        });
+    db.get(f.getHistoryDepthVar(userToken), function (err, res) {
+      var historyDepth = 5;
+      if (res) {
+        historyDepth = parseInt(res, 10);
       }
-    );
+      db.lrange(f.getMessagesName(urlId), -historyDepth, -1, 
+        function (err, res) {
+          res.forEach(function (msgJson) {
+            var message = JSON.parse(msgJson);
+            f.formatMessage(
+              message.userToken, 
+              new Date(message.time), 
+              message.msg, 
+              function (toSend) {
+                client.send(toSend);
+              }
+            );
+          });
+        }
+      );
+    });
+  };
+  f.getHistoryDepthVar = function (userToken) {
+    return "user:" + userToken + ":historyDepth";
   };
   f.setName = function (client, name, cb) {
     db.get(f.createClientUserTokenVar(client), function (err, userToken) {

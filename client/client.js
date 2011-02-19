@@ -42,9 +42,20 @@ var startSockets = function () {
     var send = function () {
       var el = document.getElementById('in'),
           msg = {}, 
-          text = el.value;
+          text = el.value,
+          historyCountText,
+          historyCountValue;
       if (text.match(/^set name:/)) {
         msg.name = text.substring(10).trim(); 
+      }
+      if (text.match(/^set history depth:/)) {
+        historyCountText = text.substring(18).trim();
+        if (historyCountText) {
+          historyCountValue = parseInt(historyCountText, 10);
+          if (!isNaN(historyCountValue)) {
+            msg.historyCount = historyCountValue;
+          }
+        }
       }
       else {
         msg.msg = text;
