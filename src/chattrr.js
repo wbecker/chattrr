@@ -92,8 +92,9 @@
         if (!urlId) {
           db.incr(f.getNextUrlIdKey(), function (err, urlId) {
             db.set(urlIdForHashKey, urlId);
-            db.set(f.getUrlForUrlId(urlId), message.url);
-            f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
+            db.set(f.getUrlForUrlId(urlId), message.url, function () {
+              f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
+            });
           });
         }
         f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
