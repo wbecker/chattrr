@@ -47,12 +47,8 @@
 
   clients = {};
   f.createConnection = function (client) {
-    var address = client.connection.address(), 
-      name = client.connection.address();
     clients[client.sessionId] = client;
-    name = address.address + ":" + address.port;
-    f.setName(client, name);
-    util.log(name + ' connected');
+    util.log(client.connection.address() + ' connected');
     client.on('message', f.handleMessage(client));
     client.on('disconnect', f.handleDisconnect(client)); 
   };
@@ -66,8 +62,15 @@
   f.handleUserToken = function (client, message) {
     var userToken = message.userToken, 
       clientUserTokenVar = f.createClientUserTokenVar(client);
+
     if (userToken) {
       db.set(clientUserTokenVar, userToken);
+      db.get(f.createNameVar(userToken), function (err, res) {
+        if (!res) {
+          var address = client.connection.address();
+          f.setName(userToken, address.address + ":" + address.port);
+        }
+      });
       f.handleUrl(client, userToken, message);
     }
     else {
@@ -111,13 +114,13 @@
   };
   f.handleMessageContents = function (client, userToken, message, urlId) {
     if (message.name) {
-      f.setName(client, message.name, function (oldName) {
+      f.setName(userToken, message.name, function (oldName) {
         var toSend = "\"" + oldName + "\" is now called \"" + 
           message.name + "\"";
         f.sendMessage(toSend, client, userToken, urlId);
       });
     }
-    if (message.historyCount) {
+    else if (message.historyCount) {
       db.set(f.getHistoryDepthVar(userToken), message.historyCount, 
         function () {
           f.sendInitialHistory(client, userToken, urlId);
@@ -163,23 +166,21 @@
       );
     });
   };
-  f.setName = function (client, name, cb) {
-    db.get(f.createClientUserTokenVar(client), function (err, userToken) {
-      var oldName, nameVar, multi;
-      nameVar = f.createNameVar(userToken);
-      multi = db.multi();
-      if (cb) {
-        multi.get(nameVar, function (err, res) {
-          oldName = res;
-        });
-      }
-      multi.set(nameVar, name, function (err, res) {
-        if (cb) {
-          cb(oldName); 
-        }
+  f.setName = function (userToken, name, cb) {
+    var oldName, nameVar, multi;
+    nameVar = f.createNameVar(userToken);
+    multi = db.multi();
+    if (cb) {
+      multi.get(nameVar, function (err, res) {
+        oldName = res;
       });
-      multi.exec();
+    }
+    multi.set(nameVar, name, function (err, res) {
+      if (cb) {
+        cb(oldName); 
+      }
     });
+    multi.exec();
   }; 
   f.saveMessage = function (message, userToken, urlId) {
     db.rpush(f.getMessagesName(urlId), 

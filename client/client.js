@@ -9,9 +9,7 @@ var startSockets = function () {
   socket.on('connect', function () {
     var connectMessage = {};
     connectMessage.url = document.URL;
-    if (userToken) {
-      connectMessage.userToken = userToken;
-    }
+    connectMessage.userToken = userToken;
     socket.send(JSON.stringify(connectMessage));
   });
   socket.on('message', function (messageRaw) { 
