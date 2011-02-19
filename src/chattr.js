@@ -11,7 +11,7 @@
       _ = require("../../underscore/underscore"),
       express = require("express"),
       db, server, socket, clients,
-      f = {};
+      f = {serverName: "chattr"};
 
   db = redis.createClient();
   server = express.createServer();
@@ -108,7 +108,7 @@
     f.sendInitialHistory(client, userToken, urlId);
     db.get(f.getUrlForUrlId(urlId), function (err, url) {
       f.sendMessage("Welcome to chattr! You are talking on " + url, 
-        client, userToken, urlId);
+        client, f.serverName, urlId);
     });
     f.handleMessageContents(client, userToken, message, urlId);
   };
@@ -117,7 +117,7 @@
       f.setName(userToken, message.name, function (oldName) {
         var toSend = "\"" + oldName + "\" is now called \"" + 
           message.name + "\"";
-        f.sendMessage(toSend, client, userToken, urlId);
+        f.sendMessage(toSend, client, f.serverName, urlId, true);
       });
     }
     else if (message.historyCount) {
@@ -129,10 +129,10 @@
     }
     else if (message.msg) {
       if (message.msg.match(/^help$/)) {
-        f.sendMessage("Available commands:", client, userToken, urlId);
-        f.sendMessage("  1. 'set name: <name>'", client, userToken, urlId);
+        f.sendMessage("Available commands:", client, f.serverName, urlId);
+        f.sendMessage("  1. 'set name: <name>'", client, f.serverName, urlId);
         f.sendMessage("  2. 'set history depth: <numberOfLines>'", client, 
-          userToken, urlId);
+          f.serverName, urlId);
       }
       else {
         f.saveMessage(message.msg, userToken, urlId);
@@ -213,9 +213,15 @@
     });
   };
   f.formatMessage = function (userToken, time, message, cb) {
-    db.get(f.createNameVar(userToken), function (err, name) {
+    var formatter = function (err, name) {
       cb(JSON.stringify({name: name, time: time, msg: message}));
-    });
+    };
+    if (userToken === f.serverName) {
+      formatter(null, userToken);
+    }
+    else {
+      db.get(f.createNameVar(userToken), formatter);
+    }
   };
   f.handleDisconnect = function (client) {
     return function () { 
