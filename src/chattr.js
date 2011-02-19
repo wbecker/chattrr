@@ -3,12 +3,12 @@
 
 (function () {
   var http = require('http'), 
-      io = require('../../socket.io-node'),
+      io = require('socket.io'),
       fs = require('fs'),
       util = require('util'),
       redis = require("redis"),
       hash = require("hashlib"),
-      _ = require("../../underscore/underscore"),
+      _ = require("underscore"),
       express = require("express"),
       db, server, socket, clients,
       f = {serverName: "chattr"};
