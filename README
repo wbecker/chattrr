@@ -2,4 +2,4 @@ chattr is a chat client that, when installed as a bookmarklet, brings up an area
 
 It runs on node and requires socket.io-node, redis, express, hashlib and underscore.
 
-So far, it has been tested on firefox.
+It has been tested on firefox and chromium.
