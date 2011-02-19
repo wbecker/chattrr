@@ -112,8 +112,8 @@
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
     db.get(f.getUrlForUrlId(urlId), function (err, url) {
-      f.sendMessage("Welcome to chattrr! You are talking on " + url, 
-        client, f.serverName, urlId);
+      f.sendMessage("Welcome to chattrr! You are talking on " + url +
+        " Type 'help' for more information", client, f.serverName, urlId);
     });
     f.handleMessageContents(client, userToken, message, urlId);
   };
