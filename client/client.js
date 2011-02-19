@@ -2,11 +2,17 @@
 /*global window, io, console*/
 var myIp = window.__chattrHost;
 var port = window.__chattrPort ? parseInt(window.__chattrPort, 10) : 80;
+var userToken = window.__userToken;
 var startSockets = function () {
   var socket = new io.Socket(myIp, {port: port});
   socket.connect();
   socket.on('connect', function () {
-    socket.send(JSON.stringify({url: document.URL}));
+    var connectMessage = {};
+    connectMessage.url = document.URL;
+    if (userToken) {
+      connectMessage.userToken = userToken;
+    }
+    socket.send(JSON.stringify(connectMessage));
   });
   socket.on('message', function (messageRaw) { 
     var parent = document.getElementById("out"),

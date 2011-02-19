@@ -60,10 +60,23 @@
     return function (rawMessage) { 
       util.log('message: ' + rawMessage); 
       var message = JSON.parse(rawMessage);
-      f.handleUrl(client, message);
+      f.handleUserToken(client, message);
     };
   };
-  f.handleUrl = function (client, message) {
+  f.handleUserToken = function (client, message) {
+    var userToken = message.userToken, 
+      clientUserTokenVar = f.createClientUserTokenVar(client);
+    if (userToken) {
+      db.set(clientUserTokenVar, userToken);
+      f.handleUrl(client, userToken, message);
+    }
+    else {
+      db.get(clientUserTokenVar, function (err, userToken) {
+        f.handleUrl(client, userToken, message);
+      });
+    }
+  };
+  f.handleUrl = function (client, userToken, message) {
     var clientUrlKey = f.getClientUrlKey(client), urlHash;
     if (message.url) {
       urlHash = hash.md5(message.url);
@@ -72,43 +85,43 @@
           db.incr("nextUrlId", function (err, urlId) {
             db.set("url:" + urlHash, urlId);
             db.set("url:" + urlId + ":url", message.url);
-            f.handleNewUrl(client, message, clientUrlKey, urlId);
+            f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
           });
         }
-        f.handleNewUrl(client, message, clientUrlKey, urlId);
+        f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
       });
     }
     else {
       db.get(clientUrlKey, function (err, urlId) {
-        f.handleMessageContents(client, message, urlId);
+        f.handleMessageContents(client, userToken, message, urlId);
       });
     }
   };
-  f.handleNewUrl = function (client, message, clientUrlKey, urlId) {
+  f.handleNewUrl = function (client, userToken, message, clientUrlKey, urlId) {
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, urlId);
     db.get("url:" + urlId + ":url", function (err, url) {
       f.sendMessage("Welcome to chattr! You are talking on " + url, 
-        client, urlId);
+        client, userToken, urlId);
     });
-    f.handleMessageContents(client, message, urlId);
+    f.handleMessageContents(client, userToken, message, urlId);
   };
-  f.handleMessageContents = function (client, message, urlId) {
+  f.handleMessageContents = function (client, userToken, message, urlId) {
     if (message.name) {
       f.setName(client, message.name, function (oldName) {
         var toSend = "\"" + oldName + "\" is now called \"" + 
           message.name + "\"";
-        f.sendMessage(toSend, client, urlId);
+        f.sendMessage(toSend, client, userToken, urlId);
       });
     }
     else if (message.msg) {
       if (message.msg.match(/^help$/)) {
-        f.sendMessage("set name: <name>", client, urlId);
+        f.sendMessage("set name: <name>", client, userToken, urlId);
       }
       else {
-        f.saveMessage(message.msg, client, urlId);
-        f.sendMessage(message.msg, client, urlId, true);
+        f.saveMessage(message.msg, userToken, urlId);
+        f.sendMessage(message.msg, client, userToken, urlId, true);
       }
     }
   };
@@ -121,7 +134,7 @@
         res.forEach(function (msgJson) {
           var message = JSON.parse(msgJson);
           f.formatMessage(
-            {sessionId: message.client}, 
+            message.userToken, 
             new Date(message.time), 
             message.msg, 
             function (toSend) {
@@ -133,28 +146,33 @@
     );
   };
   f.setName = function (client, name, cb) {
-    var oldName, nameVar, multi;
-    nameVar = f.createNameVar(client);
-    multi = db.multi();
-    if (cb) {
-      multi.get(nameVar, function (err, res) {
-        oldName = res;
-      });
-    }
-    multi.set(nameVar, name, function (err, res) {
+    db.get(f.createClientUserTokenVar(client), function (err, userToken) {
+      var oldName, nameVar, multi;
+      nameVar = f.createNameVar(userToken);
+      multi = db.multi();
       if (cb) {
-        cb(oldName); 
+        multi.get(nameVar, function (err, res) {
+          oldName = res;
+        });
       }
+      multi.set(nameVar, name, function (err, res) {
+        if (cb) {
+          cb(oldName); 
+        }
+      });
+      multi.exec();
     });
-    multi.exec();
   }; 
-  f.createNameVar = function (client) {
-    return "client:" + client.sessionId + ":name";
+  f.createClientUserTokenVar = function (client) {
+    return "client: " + client.sessionId + ":userToken";
   };
-  f.saveMessage = function (message, client, urlId) {
+  f.createNameVar = function (userToken) {
+    return "user:" + userToken + ":name";
+  };
+  f.saveMessage = function (message, userToken, urlId) {
     db.rpush(f.getMessagesName(urlId), 
       JSON.stringify({
-        client: client.sessionId, 
+        userToken: userToken, 
         msg: message,
         time: new Date()
       })
@@ -163,8 +181,8 @@
   f.getMessagesName = function (urlId) {
     return "messages:" + urlId;
   };
-  f.sendMessage = function (toSend, client, urlId, broadcast) {
-    f.formatMessage(client, new Date(), toSend, function (message) {
+  f.sendMessage = function (toSend, client, userToken, urlId, broadcast) {
+    f.formatMessage(userToken, new Date(), toSend, function (message) {
       if (broadcast) {
         var membersKey = f.getMembersKey(urlId);
         db.smembers(membersKey, function (err, clientSessionIds) {
@@ -184,8 +202,8 @@
       } 
     });
   };
-  f.formatMessage = function (client, time, message, cb) {
-    db.get(f.createNameVar(client), function (err, name) {
+  f.formatMessage = function (userToken, time, message, cb) {
+    db.get(f.createNameVar(userToken), function (err, name) {
       cb(JSON.stringify({name: name, time: time, msg: message}));
     });
   };
@@ -203,6 +221,7 @@
       db.srem(f.getMembersKey(urlId), client.sessionId);
     });
     multi.del(clientUrlKey);
+    multi.del("client:" + client.sessionId + ":user");
     multi.exec();
   };
   f.getMembersKey = function (urlId) {
