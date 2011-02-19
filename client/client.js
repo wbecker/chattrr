@@ -21,13 +21,13 @@
           nameHolder = document.createElement("span"),
           timeHolder = document.createElement("span"),
           msgHolder = document.createElement("span");
-      nameHolder.className = "nameHolder";
-      timeHolder.className = "timeHolder";
-      msgHolder.className = "msgHolder";
+      nameHolder.className = "chattrr_nameHolder";
+      timeHolder.className = "chattrr_timeHolder";
+      msgHolder.className = "chattrr_msgHolder";
       nameHolder.textContent = message.name;
       timeHolder.textContent = new Date(message.time).toLocaleTimeString();
       msgHolder.textContent = message.msg;
-      holder.className = "message";
+      holder.className = "chattrr_message";
       parent.appendChild(holder);
       holder.appendChild(nameHolder);
       holder.appendChild(timeHolder);
@@ -111,21 +111,21 @@
     }
   
     out = document.createElement("div");
-    out.id = "out";
+    out.id = "chattrr_out";
     chattrr.appendChild(out);
   
     inputHolder = document.createElement("div");
-    inputHolder.id = "inputHolder";
+    inputHolder.id = "chattrr_inputHolder";
     chattrr.appendChild(inputHolder);
 
     input = document.createElement("input");
     input.type = "text";
-    input.id = "in";
+    input.id = "chattrr_in";
     inputHolder.appendChild(input);
     
     send = document.createElement("input");
     send.type = "button";
-    send.id = "send";
+    send.id = "chattrr_send";
     send.value = "Send";
     inputHolder.appendChild(send);
     input.focus();

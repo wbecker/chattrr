@@ -11,7 +11,7 @@
   color: #000000;
   font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif
 }
-#out {
+#chattrr_out {
   top: 0;
   bottom: 2.5em;
   position: absolute;
@@ -19,44 +19,45 @@
   width: 100%;
   text-align: left;
 }
-.message {
+.chattrr_message {
   padding: 0.125em;
+  margin: 0;
 }
-.message:nth-child(odd) {
+.chattrr_message:nth-child(odd) {
 }
-.message:nth-child(even) {
+.chattrr_message:nth-child(even) {
   background-color: #DDDDFF;
 }
-.message .nameHolder,
-.message .timeHolder {
+.chattrr_message .chattrr_nameHolder,
+.chattrr_message .chattrr_timeHolder {
   margin-right: 0.5em;
   color: #555555;
 }
-.message .nameHolder {
+.chattrr_message .chattrr_nameHolder {
   font-weight: bold;
   display: inline-block;
   min-width: 9em;
   text-align: right;
 }
-.message .timeHolder {
+.chattrr_message .chattrr_timeHolder {
 }
-#inputHolder {
+#chattrr_inputHolder {
   position: absolute;
   width: 100%;
   height: 2em;
   bottom: 0;
   border-width: 0.25em;
 }
-#in {
+#chattrr_in {
   width: 100%;
   padding: 0;
   margin: 0;
   border: 0;
 }
-#in:focus {
+#chattrr_in:focus {
   border-color: #BBBBBB !important;
 }
-#send {
+#chattrr_send {
   position: absolute;
   right: 0;
   -moz-box-sizing: content-box;
@@ -70,11 +71,11 @@
   -moz-border-radius: 0;
   background-image: none;
 } 
-#in, #send {
+#chattrr_in, #chattrr_send {
   font-size: inherit;
   height: 2em;
 }
-#inputHolder, #send {
+#chattrr_inputHolder, #chattrr_send {
   border-style: solid;
   border-color: #BBBBBB;
 }
