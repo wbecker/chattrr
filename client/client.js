@@ -15,7 +15,7 @@
       socket.send(JSON.stringify(connectMessage));
     });
     socket.on('message', function (messageRaw) { 
-      var parent = document.getElementById("out"),
+      var parent = document.getElementById("chattrr_out"),
           holder = document.createElement("div"),
           message = JSON.parse(messageRaw),
           nameHolder = document.createElement("span"),
@@ -40,7 +40,7 @@
   
     (function () {
       var send = function () {
-        var el = document.getElementById('in'),
+        var el = document.getElementById('chattrr_in'),
             msg = {}, 
             text = el.value,
             historyCountText,
@@ -66,10 +66,11 @@
         el.value = "";
         el.focus();
       };
-      document.getElementById('send').addEventListener('click', send, false);
-      document.getElementById("in").addEventListener("keydown",
+      document.getElementById('chattrr_send').addEventListener(
+        'click', send, false);
+      document.getElementById("chattrr_in").addEventListener("keydown",
         function (event) {
-          var el = document.getElementById("in");
+          var el = document.getElementById("chattrr_in");
           if (event.keyCode === 38) {
             //up
             if (historyIndex > 0) {
@@ -85,7 +86,7 @@
             }
           }
         }, false);
-      document.getElementById("in").addEventListener("keypress",
+      document.getElementById("chattrr_in").addEventListener("keypress",
         function (event) {
           if (event.which === 13) {
             send();
