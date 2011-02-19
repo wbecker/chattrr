@@ -7,7 +7,7 @@
       fs = require('fs'),
       util = require('util'),
       redis = require("redis"),
-      hash = require("hashlib"),
+      hash = require("../../hashlib/build/default/hashlib"),
       _ = require("underscore"),
       express = require("express"),
       db, server, socket, clients,
@@ -46,7 +46,7 @@
     });
   });
 
-  server.listen(8000);
+  server.listen(80);
   socket = io.listen(server);
 
   clients = {};
