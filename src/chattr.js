@@ -9,14 +9,21 @@
       redis = require("redis"),
       hash = require("hashlib"),
       _ = require("../../underscore/underscore"),
+      express = require("express"),
       db, server, socket, clients,
       f = {};
 
   db = redis.createClient();
-  server = http.createServer(function (req, res) {
+  server = express.createServer();
+  server.configure(function () {
+    server.use(express.staticProvider("client"));
+  });
+  server.get("/", function (req, res) {
     var url = req.url;
     if (url === "/") {
       url += "client.htm";
+      res.redirect("/client.htm?userToken=" + 
+        hash.md5(Math.random().toString()));
     }
     fs.readFile('client' + url, "binary", function (err, file) {
       if (!err) {

@@ -6,7 +6,10 @@
     Drag this to your toolbar:
     <a id="desktopLink">Chattr</a>
     <script>
-      document.getElementById("desktopLink").href='javascript:(function(){var%20script=document.createElement("script");script.src="'+document.URL+'/client.js";document.body.appendChild(script);window.__chattrHost="'+window.location.hostname+'";window.__chattrPort="'+window.location.port+'";})();';
+      var paramsJson = "{"+location.search.substring(1).replace(/=/g, ":").replace(/&/g, ",").replace(/([0-9a-zA-Z]+):([0-9a-zA-Z]+)/g, "\"$1\":\"$2\"")+"}";
+      var searchParams = JSON.parse(paramsJson);
+      var baseUrl = location.protocol + "//" + location.host;
+      document.getElementById("desktopLink").href='javascript:(function(){var%20script=document.createElement("script");script.src="'+baseUrl+'/client.js";document.body.appendChild(script);window.__chattrHost="'+window.location.hostname+'";window.__chattrPort="'+window.location.port+'";window.__userToken="'+searchParams.userToken+'";})();';
     </script>
   </body>
 </html>
