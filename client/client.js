@@ -63,7 +63,7 @@ var startSockets = function () {
   }());
 };
 (function () {
-  var style, chattr, out, inputHolder, input, send;
+  var style, bodyStyle, chattr, out, inputHolder, input, send;
   style = document.createElement("link");
   style.rel = "stylesheet";
   style.type = "text/css";
@@ -73,6 +73,11 @@ var startSockets = function () {
   chattr = document.createElement("div");
   chattr.id = "chattr";
   document.body.appendChild(chattr);
+  
+  bodyStyle = window.getComputedStyle(document.body, null);
+  if (bodyStyle.marginLeft) {
+    chattr.style.marginLeft = "-" + bodyStyle.marginLeft;
+  }
 
   out = document.createElement("div");
   out.id = "out";

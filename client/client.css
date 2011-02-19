@@ -45,11 +45,13 @@
   width: 100%;
   height: 2em;
   bottom: 0;
+  border-width: 0.25em;
 }
 #in {
   width: 100%;
   padding: 0;
   margin: 0;
+  border: 0;
 }
 #in:focus {
   border-color: #BBBBBB !important;
@@ -60,9 +62,19 @@
   -moz-box-sizing: content-box;
   padding: 0 1em 0 1em;
   margin: 0;
+  border-width: 0 0.25em;
+  display: inline;
+  color: white;
+  background-color: #888888;
+  font: 200 1em/1.2 Impact,"League Gothic",Haettenschweiler,sans-serif;
+  -moz-border-radius: 0;
+  background-image: none;
 } 
 #in, #send {
-  border: 0.25em solid #BBBBBB;
-  font-size: 1em;
+  font-size: inherit;
   height: 2em;
+}
+#inputHolder, #send {
+  border-style: solid;
+  border-color: #BBBBBB;
 }
