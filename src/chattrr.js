@@ -11,7 +11,7 @@
       _ = require("underscore"),
       express = require("express"),
       db, server, socket, clients,
-      f = {serverName: "chattr"};
+      f = {serverName: "chattrr"};
 
   db = redis.createClient();
   setInterval(function () {
@@ -111,7 +111,7 @@
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
     db.get(f.getUrlForUrlId(urlId), function (err, url) {
-      f.sendMessage("Welcome to chattr! You are talking on " + url, 
+      f.sendMessage("Welcome to chattrr! You are talking on " + url, 
         client, f.serverName, urlId);
     });
     f.handleMessageContents(client, userToken, message, urlId);

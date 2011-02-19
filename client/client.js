@@ -2,8 +2,8 @@
 /*global window, io, console*/
 (function () {
   var myIp, port, userToken, startSockets, history = [], historyIndex = 0;
-  myIp = window.__chattrHost;
-  port = window.__chattrPort ? parseInt(window.__chattrPort, 10) : 80;
+  myIp = window.__chattrrHost;
+  port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
   startSockets = function () {
     var socket = new io.Socket(myIp, {port: port});
@@ -94,29 +94,29 @@
     }());
   };
   (function () {
-    var style, bodyStyle, chattr, out, inputHolder, input, send;
+    var style, bodyStyle, chattrr, out, inputHolder, input, send;
     style = document.createElement("link");
     style.rel = "stylesheet";
     style.type = "text/css";
     style.href = "http://" + myIp + ":" + port + "/client.css";
     document.getElementsByTagName("head")[0].appendChild(style);
   
-    chattr = document.createElement("div");
-    chattr.id = "chattr";
-    document.body.appendChild(chattr);
+    chattrr = document.createElement("div");
+    chattrr.id = "chattrr";
+    document.body.appendChild(chattrr);
     
     bodyStyle = window.getComputedStyle(document.body, null);
     if (bodyStyle.marginLeft) {
-      chattr.style.marginLeft = "-" + bodyStyle.marginLeft;
+      chattrr.style.marginLeft = "-" + bodyStyle.marginLeft;
     }
   
     out = document.createElement("div");
     out.id = "out";
-    chattr.appendChild(out);
+    chattrr.appendChild(out);
   
     inputHolder = document.createElement("div");
     inputHolder.id = "inputHolder";
-    chattr.appendChild(inputHolder);
+    chattrr.appendChild(inputHolder);
 
     input = document.createElement("input");
     input.type = "text";
