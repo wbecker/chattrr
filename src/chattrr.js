@@ -9,6 +9,7 @@
       redis = require("redis"),
       hash = require("hashlib"),
       _ = require("underscore"),
+      logs = require("winston"),
       express = require("express"),
       db, server, socket, clients,
       f = {serverName: "chattrr"};
@@ -18,6 +19,27 @@
     db.bgsave();
   }, 5 * 60 * 1000);
 
+  (function () {
+    var now = new Date(),
+        pad = function (x) {
+          if (x < 10) {
+            return "0" + x.toString();
+          }
+          return x.toString();
+        };
+
+    logs.add(logs.transports.File, {
+      filename: "logs/chattrr_" +
+        now.getUTCFullYear() + "-" +
+        pad(now.getUTCMonth() + 1) + "-" +
+        pad(now.getUTCDate()) + "_" +
+        pad(now.getUTCHours()) + ":" +
+        pad(now.getUTCMinutes()) + ":" +
+        pad(now.getUTCSeconds()) + ".log",
+      level: "info"
+    });
+    logs.remove(logs.transports.Console);
+  }());
 
   server = express.createServer();
   server.configure(function () {
@@ -26,7 +48,7 @@
   process.on("exit", function () {
     server.close();
     db.save();
-    util.log("Database saved. Closing.");
+    logs.info("Database saved. Closing.");
   });
   process.on("SIGINT", function () {
     process.exit();
@@ -56,18 +78,22 @@
   });
 
   server.listen(8000);
-  socket = io.listen(server);
+  socket = io.listen(server, {
+    log: logs.info
+  });
 
   clients = {};
   f.createConnection = function (client) {
+    var address = client.connection.address();
     clients[client.sessionId] = client;
-    util.log(client.connection.address() + ' connected');
+    logs.info('client connected: ' + f.formatAddress(client));
     client.on('message', f.handleMessage(client));
     client.on('disconnect', f.handleDisconnect(client)); 
   };
   f.handleMessage = function (client) {
     return function (rawMessage) { 
-      util.log('message: ' + rawMessage); 
+      logs.info('message received from: ' + f.formatAddress(client) + 
+        ' - ' + rawMessage); 
       var message = JSON.parse(rawMessage);
       f.handleUserToken(client, message);
     };
@@ -250,7 +276,9 @@
   };
   f.handleDisconnect = function (client) {
     return function () { 
-      util.log('disconnected'); 
+      var con = client.connection;
+      logs.info('client disconnected: ' + 
+        con.remoteAddress + ":" + con.remotePort); 
       f.removeClient(client);
       delete clients[client.sessionId];
     };
@@ -266,6 +294,11 @@
     multi.exec();
   };
   socket.on('connection', f.createConnection);
+  f.formatAddress = function (client) {
+    var con = client.connection,
+        addr = con.address();
+    return addr.address + ":" + addr.port + "(" + con.remotePort + ")";
+  };
   //Redis keys
   //"url:nextUrlId" - int 
   //  the id to use for the next url
