@@ -8,7 +8,7 @@
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
   startSockets = function () {
-    var tryReconnect, socket;
+    var tryReconnect, socket, messageReceived, tellConnectionLost;
     socket = new io.Socket(myIp, {port: port});
     tryReconnect = function () {
       socket.connect();
@@ -16,6 +16,7 @@
     tryReconnect();
     socket.on("connect_failed", function () {
       setTimeout(tryReconnect, 1000);
+      tellConnectionLost();
     });
     socket.on('connect', function () {
       var connectMessage = {};
@@ -28,8 +29,17 @@
     });
     socket.on('disconnect', function () { 
       setTimeout(tryReconnect, 1000);
+      tellConnectionLost();
     });
-    socket.on('message', function (messageRaw) { 
+    tellConnectionLost = function () {
+      messageReceived(JSON.stringify({
+        name: "chattrr",
+        time: new Date(),
+        msg: "Connection lost, attempting to reconnect..."
+      }));
+    };
+
+    messageReceived = function (messageRaw) { 
       var parent = document.getElementById("chattrr_out"),
           tbody = document.getElementById("chattrr_out_tablebody"),
           holder = document.createElement("tr"),
@@ -54,7 +64,8 @@
       //the extra amount takes into account the extra height added 
       //by the box-shadow
       parent.scrollTop = parent.scrollHeight - parent.offsetHeight - 15;
-    });
+    };
+    socket.on('message', messageReceived);
   
     (function () {
       var send = function () {
