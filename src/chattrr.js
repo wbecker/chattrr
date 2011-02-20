@@ -1,5 +1,5 @@
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, maxerr: 5, maxlen: 80, indent: 2 */
-/*global require, setInterval */
+/*global require, setInterval, process */
 
 (function () {
   var http = require('http'), 
@@ -9,6 +9,7 @@
       redis = require("redis"),
       hash = require("../../hashlib/build/default/hashlib"),
       _ = require("underscore"),
+      logs = require("winston"),
       express = require("express"),
       db, server, socket, clients,
       f = {serverName: "chattrr"};
@@ -18,9 +19,47 @@
     db.bgsave();
   }, 5 * 60 * 1000);
 
+  (function () {
+    var now = new Date(),
+        pad = function (x) {
+          if (x < 10) {
+            return "0" + x.toString();
+          }
+          return x.toString();
+        };
+
+    logs.add(logs.transports.File, {
+      filename: "logs/chattrr_" +
+        now.getUTCFullYear() + "-" +
+        pad(now.getUTCMonth() + 1) + "-" +
+        pad(now.getUTCDate()) + "_" +
+        pad(now.getUTCHours()) + ":" +
+        pad(now.getUTCMinutes()) + ":" +
+        pad(now.getUTCSeconds()) + ".log",
+      level: "info"
+    });
+    
+    logs.remove(logs.transports.Console);
+    logs.add(logs.transports.Console, {
+      level: "error"
+    });
+    /**/
+  }());
+
   server = express.createServer();
   server.configure(function () {
     server.use(express.staticProvider("client"));
+  });
+  process.on("exit", function () {
+    server.close();
+    db.save();
+    logs.info("Database saved. Closing.");
+  });
+  process.on("SIGINT", function () {
+    process.exit();
+  });
+  process.on("uncaughtException", function (err) {
+    logs.error(err);
   });
   server.get("/", function (req, res) {
     var url = req.url;
@@ -47,18 +86,22 @@
   });
 
   server.listen(80);
-  socket = io.listen(server);
+  socket = io.listen(server, {
+    log: logs.info
+  });
 
   clients = {};
   f.createConnection = function (client) {
+    var address = client.connection.address();
     clients[client.sessionId] = client;
-    util.log(client.connection.address() + ' connected');
+    logs.info('client connected: ' + f.formatAddress(client));
     client.on('message', f.handleMessage(client));
     client.on('disconnect', f.handleDisconnect(client)); 
   };
   f.handleMessage = function (client) {
     return function (rawMessage) { 
-      util.log('message: ' + rawMessage); 
+      logs.info('message received from: ' + f.formatAddress(client) + 
+        ' - ' + rawMessage); 
       var message = JSON.parse(rawMessage);
       f.handleUserToken(client, message);
     };
@@ -146,7 +189,8 @@
       }
       else {
         f.saveMessage(message.msg, userToken, urlId);
-        f.sendMessage(message.msg, client, userToken, urlId, true);
+        f.sendMessage(message.msg, client, userToken, urlId, true, 
+          message.seq);
       }
     }
   };
@@ -167,6 +211,7 @@
               message.userToken, 
               new Date(message.time), 
               message.msg, 
+              null,
               function (toSend) {
                 client.send(toSend);
               }
@@ -201,8 +246,8 @@
       })
     );
   };
-  f.sendMessage = function (toSend, client, userToken, urlId, broadcast) {
-    f.formatMessage(userToken, new Date(), toSend, function (message) {
+  f.sendMessage = function (toSend, client, userToken, urlId, broadcast, seq) {
+    f.formatMessage(userToken, new Date(), toSend, seq, function (message) {
       if (broadcast) {
         var membersKey = f.getMembersKey(urlId);
         db.smembers(membersKey, function (err, clientSessionIds) {
@@ -222,9 +267,13 @@
       } 
     });
   };
-  f.formatMessage = function (userToken, time, message, cb) {
+  f.formatMessage = function (userToken, time, message, seq, cb) {
     var formatter = function (err, name) {
-      cb(JSON.stringify({name: name, time: time, msg: message}));
+      var msgObj = {name: name, time: time, msg: message};
+      if (seq) {
+        msgObj.seq = seq;
+      }
+      cb(JSON.stringify(msgObj));
     };
     if (userToken === f.serverName) {
       formatter(null, userToken);
@@ -235,7 +284,9 @@
   };
   f.handleDisconnect = function (client) {
     return function () { 
-      util.log('disconnected'); 
+      var con = client.connection;
+      logs.info('client disconnected: ' + 
+        con.remoteAddress + ":" + con.remotePort); 
       f.removeClient(client);
       delete clients[client.sessionId];
     };
@@ -251,6 +302,11 @@
     multi.exec();
   };
   socket.on('connection', f.createConnection);
+  f.formatAddress = function (client) {
+    var con = client.connection,
+        addr = con.address();
+    return addr.address + ":" + addr.port + "(" + con.remotePort + ")";
+  };
   //Redis keys
   //"url:nextUrlId" - int 
   //  the id to use for the next url
