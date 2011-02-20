@@ -6,12 +6,21 @@
         margin: 20px;
       }
       div {
-        -moz-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1) inset;
         padding: 20px;
+        -webkit-box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 60px rgba(0, 0, 0, 0.1) inset;
+        -moz-box-shadow:   0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1) inset;
+        box-shadow:        0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1) inset;
+        border:1px solid #efefef;
+        -moz-border-radius:0 0 420px 420px / 0 0 6px 6px;
+        border-radius:0 0 420px 420px / 0 0 6px 6px;
       }
       div:before {
+        -webkit-box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
         -moz-box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+ 
         -moz-border-radius: 100px 100px 100px 100px / 10px 10px 10px 10px;
+        border-radius: 100px 100px 100px 100px / 10px 10px 10px 10px;
         bottom: 0;
         left: 10px;
         right: 10px;
@@ -35,7 +44,7 @@
   <body>
     <div>
     <h1>Chattrr</h1>
-    <p>Chattrr is a new way to talk on the web. Just install the bookmarklet by dragging it to your toolbar, then whenever you go to a website, click it and talk to the other people who are also browsing it.</p>
+    <p>Chattrr is a new way to talk on the web. Just install the bookmarklet by dragging it to your toolbar then, whenever you go to a website, click it and talk to the other people who are also browsing it.</p>
     <p>Drag this link to your toolbar: <a id="desktopLink">Chattrr</a></p>
     <script>
       var paramsJson = "{"+location.search.substring(1).replace(/=/g, ":").replace(/&/g, ",").replace(/([0-9a-zA-Z]+):([0-9a-zA-Z]+)/g, "\"$1\":\"$2\"")+"}";
