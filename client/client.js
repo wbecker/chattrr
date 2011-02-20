@@ -3,7 +3,7 @@
 (function () {
   var myIp, port, userToken, startSockets, 
     history = [], historyIndex = 0, 
-    lostMessages = {}, messageIndex = 0;
+    lostMessages = {}, messageIndex = 1;
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
