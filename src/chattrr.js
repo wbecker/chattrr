@@ -71,8 +71,9 @@
       db.set(clientUserTokenVar, userToken);
       db.get(f.createNameVar(userToken), function (err, res) {
         if (!res) {
-          var address = client.connection.address();
-          f.setName(userToken, address.address + ":" + address.port);
+          db.incr(f.createAnonIndex(), function (err, res) {
+            f.setName(userToken, "Anonymous_" + res);
+          });
         }
       });
       f.handleUrl(client, userToken, message);
@@ -97,7 +98,9 @@
             });
           });
         }
-        f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
+        else {
+          f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
+        }
       });
     }
     else {
@@ -283,6 +286,9 @@
   //  how much history to show for the given user.
   f.getHistoryDepthVar = function (userToken) {
     return "user:" + userToken + ":historyDepth";
+  };
+  f.createAnonIndex = function () {
+    return "user:nextAnonId";
   };
   //"client:<client.sessionId>:userToken" - string 
   //  who the client actually is
