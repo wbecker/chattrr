@@ -97,7 +97,9 @@
             });
           });
         }
-        f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
+        else {
+          f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
+        }
       });
     }
     else {
