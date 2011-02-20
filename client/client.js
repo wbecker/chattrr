@@ -16,11 +16,12 @@
     });
     socket.on('message', function (messageRaw) { 
       var parent = document.getElementById("chattrr_out"),
-          holder = document.createElement("div"),
+          tbody = document.getElementById("chattrr_out_tablebody"),
+          holder = document.createElement("tr"),
           message = JSON.parse(messageRaw),
-          nameHolder = document.createElement("span"),
-          timeHolder = document.createElement("span"),
-          msgHolder = document.createElement("span");
+          nameHolder = document.createElement("td"),
+          timeHolder = document.createElement("td"),
+          msgHolder = document.createElement("td");
       nameHolder.className = "chattrr_nameHolder";
       timeHolder.className = "chattrr_timeHolder";
       msgHolder.className = "chattrr_msgHolder";
@@ -28,11 +29,13 @@
       timeHolder.textContent = new Date(message.time).toLocaleTimeString();
       msgHolder.textContent = message.msg;
       holder.className = "chattrr_message";
-      parent.appendChild(holder);
+      tbody.appendChild(holder);
       holder.appendChild(nameHolder);
       holder.appendChild(timeHolder);
       holder.appendChild(msgHolder);
-      parent.scrollTop = parent.scrollHeight;
+      //the extra amount takes into account the extra height added 
+      //by the box-shadow
+      parent.scrollTop = parent.scrollHeight - parent.offsetHeight - 15;
     });
     socket.on('disconnect', function () { 
       console.debug("disconnected", arguments); 
@@ -95,7 +98,8 @@
     }());
   };
   (function () {
-    var style, bodyStyle, chattrr, out, inputHolder, input, send;
+    var style, bodyStyle, chattrr, out, table, tableBody, 
+      inputHolder, input, send;
     style = document.createElement("link");
     style.rel = "stylesheet";
     style.type = "text/css";
@@ -114,6 +118,16 @@
     out = document.createElement("div");
     out.id = "chattrr_out";
     chattrr.appendChild(out);
+    
+    table = document.createElement("table");
+    table.id = "chattrr_out_table";
+    table.cellSpacing = 0;
+    table.cellPadding = 0;
+    out.appendChild(table);
+    
+    tableBody = document.createElement("tbody");
+    tableBody.id = "chattrr_out_tablebody";
+    table.appendChild(tableBody);
   
     inputHolder = document.createElement("div");
     inputHolder.id = "chattrr_inputHolder";

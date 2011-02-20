@@ -16,26 +16,40 @@
   bottom: 2.5em;
   position: absolute;
   overflow-y: scroll;
+  overflow-x: hidden;
   width: 100%;
   text-align: left;
+  padding: 0;
+  margin: 0;
 }
 .chattrr_message {
   padding: 0.125em;
   margin: 0;
+  border: 1px solid #EFEFEF;
+  -webkit-box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+  -moz-box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
 }
 .chattrr_message:nth-child(odd) {
 }
 .chattrr_message:nth-child(even) {
   background-color: #DDDDFF;
 }
+.chattrr_message .chattrr_detailsHolder {
+  padding: 0; 
+  float: left;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  border-width: 0;
+}
 .chattrr_message .chattrr_nameHolder,
 .chattrr_message .chattrr_timeHolder {
-  margin-right: 0.5em;
+  padding-right: 0.5em;
   color: #555555;
 }
 .chattrr_message .chattrr_nameHolder {
   font-weight: bold;
-  display: inline-block;
   min-width: 9em;
   text-align: right;
 }
@@ -47,6 +61,7 @@
   height: 2em;
   bottom: 0;
   border-width: 0.25em;
+  padding: 0;
 }
 #chattrr_in {
   width: 100%;
@@ -78,4 +93,12 @@
 #chattrr_inputHolder, #chattrr_send {
   border-style: solid;
   border-color: #BBBBBB;
+}
+#chattrr,
+#chattrr_out,
+.chattrr_message, 
+.chattrr_message *,
+#chattrr_inputHolder {
+  -moz-border-radius: 0;
+  border-radius: 0;
 }
