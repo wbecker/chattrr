@@ -1,5 +1,5 @@
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, maxerr: 5, maxlen: 80, indent: 2 */
-/*global require, setInterval */
+/*global require, setInterval, process */
 
 (function () {
   var http = require('http'), 
@@ -18,9 +18,18 @@
     db.bgsave();
   }, 5 * 60 * 1000);
 
+
   server = express.createServer();
   server.configure(function () {
     server.use(express.staticProvider("client"));
+  });
+  process.on("exit", function () {
+    server.close();
+    db.save();
+    util.log("Database saved. Closing.");
+  });
+  process.on("SIGINT", function () {
+    process.exit();
   });
   server.get("/", function (req, res) {
     var url = req.url;
