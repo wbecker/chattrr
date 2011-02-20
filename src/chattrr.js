@@ -38,7 +38,12 @@
         pad(now.getUTCSeconds()) + ".log",
       level: "info"
     });
+    
     logs.remove(logs.transports.Console);
+    logs.add(logs.transports.Console, {
+      level: "error"
+    });
+    /**/
   }());
 
   server = express.createServer();
@@ -52,6 +57,9 @@
   });
   process.on("SIGINT", function () {
     process.exit();
+  });
+  process.on("uncaughtException", function (err) {
+    logs.error(err);
   });
   server.get("/", function (req, res) {
     var url = req.url;
