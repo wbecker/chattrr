@@ -146,7 +146,8 @@
       }
       else {
         f.saveMessage(message.msg, userToken, urlId);
-        f.sendMessage(message.msg, client, userToken, urlId, true);
+        f.sendMessage(message.msg, client, userToken, urlId, true, 
+          message.seq);
       }
     }
   };
@@ -167,6 +168,7 @@
               message.userToken, 
               new Date(message.time), 
               message.msg, 
+              null,
               function (toSend) {
                 client.send(toSend);
               }
@@ -201,8 +203,8 @@
       })
     );
   };
-  f.sendMessage = function (toSend, client, userToken, urlId, broadcast) {
-    f.formatMessage(userToken, new Date(), toSend, function (message) {
+  f.sendMessage = function (toSend, client, userToken, urlId, broadcast, seq) {
+    f.formatMessage(userToken, new Date(), toSend, seq, function (message) {
       if (broadcast) {
         var membersKey = f.getMembersKey(urlId);
         db.smembers(membersKey, function (err, clientSessionIds) {
@@ -222,9 +224,13 @@
       } 
     });
   };
-  f.formatMessage = function (userToken, time, message, cb) {
+  f.formatMessage = function (userToken, time, message, seq, cb) {
     var formatter = function (err, name) {
-      cb(JSON.stringify({name: name, time: time, msg: message}));
+      var msgObj = {name: name, time: time, msg: message};
+      if (seq) {
+        msgObj.seq = seq;
+      }
+      cb(JSON.stringify(msgObj));
     };
     if (userToken === f.serverName) {
       formatter(null, userToken);
