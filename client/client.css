@@ -9,7 +9,6 @@
   background-color: #ffffff;
   border: 1px solid #bbbbbb;
   color: #000000;
-  font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif;
   z-index: 9999999999;
 }
 #chattrr_out {
@@ -35,6 +34,7 @@
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
   color: #000000;
   text-shadow: none;
+  line-height: 1.5em;
 }
 .chattrr_message:nth-child(odd) {
 }
@@ -111,4 +111,8 @@
 #chattrr_inputHolder {
   -moz-border-radius: 0;
   border-radius: 0;
+}
+.chattrr_message *,
+#chattrr_in {
+  font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif;
 }
