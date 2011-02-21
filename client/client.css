@@ -53,6 +53,9 @@
   padding-right: 0.5em;
   color: #555555;
 }
+.chattrr_message * {
+  font-size: inherit;
+}
 .chattrr_message .chattrr_nameHolder {
   font-weight: bold;
   min-width: 9em;
