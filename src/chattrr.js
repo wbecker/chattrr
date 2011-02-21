@@ -38,7 +38,6 @@
         pad(now.getUTCSeconds()) + ".log",
       level: "info"
     });
-    
     logs.remove(logs.transports.Console);
     logs.add(logs.transports.Console, {
       level: "error"
@@ -52,6 +51,9 @@
   });
   process.on("exit", function () {
     server.close();
+    _(socket.clients).values().forEach(function (client) {
+      client.send(JSON.stringify({closing: true}));
+    });
     db.save();
     logs.info("Database saved. Closing.");
   });
