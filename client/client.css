@@ -9,7 +9,8 @@
   background-color: #ffffff;
   border: 1px solid #bbbbbb;
   color: #000000;
-  font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif
+  font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif;
+  z-index: 9999999999;
 }
 #chattrr_out {
   top: 0;
