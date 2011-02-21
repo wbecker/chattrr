@@ -1,24 +1,155 @@
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, browser: true, maxerr: 5, maxlen: 80, indent: 2 */
 /*global _, window, io, console*/
 (function () {
-  var myIp, port, userToken, startSockets, 
+  var myIp, port, userToken, 
+    messageReceived, connectSendButton, sendButtonConnected = false,
+    startSockets, socketHolder = {}, retryCount, retryTimeout,
     history = [], historyIndex = 0, 
     lostMessages = {}, messageIndex = 1;
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
+  messageReceived = function (messageRaw) { 
+    var message = JSON.parse(messageRaw),
+        parent, tbody, holder, nameHolder, timeHolder, msgHolder;
+    if (message.closing) {
+      if (socketHolder.socket) {
+        socketHolder.socket.disconnect();
+      }
+      if (retryTimeout) {
+        clearInterval(retryTimeout);
+      }
+      retryTimeout = setInterval(startSockets, 2000);
+      messageReceived(JSON.stringify({
+        name: "chattrr",
+        time: new Date(),
+        msg: "Server shutting down. We'll listen for it to come back again."
+      }));
+      return;
+    }
+
+    parent = document.getElementById("chattrr_out");
+    tbody = document.getElementById("chattrr_out_tablebody");
+    holder = document.createElement("tr");
+    nameHolder = document.createElement("td");
+    timeHolder = document.createElement("td");
+    msgHolder = document.createElement("td");
+    if (lostMessages[message.seq]) {
+      delete lostMessages[message.seq];
+    }
+    nameHolder.className = "chattrr_nameHolder";
+    timeHolder.className = "chattrr_timeHolder";
+    msgHolder.className = "chattrr_msgHolder";
+    nameHolder.textContent = message.name;
+    timeHolder.textContent = new Date(message.time).toLocaleTimeString();
+    msgHolder.textContent = message.msg;
+    holder.className = "chattrr_message";
+    tbody.appendChild(holder);
+    holder.appendChild(nameHolder);
+    holder.appendChild(timeHolder);
+    holder.appendChild(msgHolder);
+    //the extra amount takes into account the extra height added 
+    //by the box-shadow
+    parent.scrollTop = parent.scrollHeight - parent.offsetHeight - 15;
+  };
+  connectSendButton = function () {
+    if (sendButtonConnected) {
+      return;
+    }
+    sendButtonConnected = true;
+    var send = function () {
+      var el = document.getElementById('chattrr_in'),
+          msg = {}, 
+          text = el.value,
+          historyCountText,
+          historyCountValue,
+          seq;
+      if (text.match(/^set name:/)) {
+        msg.name = text.substring(10).trim(); 
+      }
+      if (text.match(/^set history depth:/)) {
+        historyCountText = text.substring(18).trim();
+        if (historyCountText) {
+          historyCountValue = parseInt(historyCountText, 10);
+          if (!isNaN(historyCountValue)) {
+            msg.historyCount = historyCountValue;
+          }
+        }
+      }
+      else {
+        msg.msg = text;
+      }
+      history.push(msg);
+      historyIndex = history.length;
+      seq = messageIndex;
+      messageIndex += 1;
+      msg.seq = seq;
+      lostMessages[seq] = msg;
+      if (socketHolder.socket && socketHolder.socket.connected) {
+        socketHolder.socket.send(JSON.stringify(msg));
+      }
+      el.value = "";
+      el.focus();
+    };
+    document.getElementById('chattrr_send').addEventListener(
+      'click', send, false);
+    document.getElementById("chattrr_in").addEventListener("keydown",
+      function (event) {
+        var el = document.getElementById("chattrr_in");
+        if (event.keyCode === 38) {
+          //up
+          if (historyIndex > 0) {
+            historyIndex -= 1;
+            el.value = history[historyIndex].msg;
+          }
+        }
+        else if (event.keyCode === 40) {
+          //down
+          if (historyIndex < history.length - 1) {
+            historyIndex += 1;
+            el.value = history[historyIndex].msg;
+          }
+        }
+      }, false);
+    document.getElementById("chattrr_in").addEventListener("keypress",
+      function (event) {
+        if (event.which === 13) {
+          send();
+        }
+      }, false);
+  };
   startSockets = function () {
-    var tryReconnect, socket, messageReceived, tellConnectionLost;
+    var tryReconnect, socket, connectionLost;
+    messageReceived(JSON.stringify({
+      name: "chattrr",
+      time: new Date(),
+      msg: "Initialising connection, please wait..."
+    }));
+    retryCount = 0;
+
     socket = new io.Socket(myIp, {port: port});
     tryReconnect = function () {
-      socket.connect();
+      if (retryCount >= 1) {
+        if (retryTimeout) {
+          clearInterval(retryTimeout);
+        }
+        socket.disconnect();
+        startSockets();
+      }
+      else {
+        retryCount += 1;
+        socket.connect();
+      }
     };
     tryReconnect();
     socket.on("connect_failed", function () {
-      setTimeout(tryReconnect, 1000);
-      tellConnectionLost();
+      connectionLost(1);
     });
     socket.on('connect', function () {
+      socketHolder.socket = socket;
+      if (retryTimeout) {
+        clearInterval(retryTimeout);
+      }
       var connectMessage = {};
       connectMessage.url = document.URL;
       connectMessage.userToken = userToken;
@@ -26,109 +157,24 @@
       _(lostMessages).keys().sort().forEach(function (key) {
         socket.send(JSON.stringify(lostMessages[key]));
       });
+      connectSendButton();
     });
     socket.on('disconnect', function () { 
-      setTimeout(tryReconnect, 1000);
-      tellConnectionLost();
+      connectionLost(2);
     });
-    tellConnectionLost = function () {
+    connectionLost = function (id) {
+      if (socketHolder.socket) {
+        delete socketHolder.socket;
+      }
       messageReceived(JSON.stringify({
         name: "chattrr",
         time: new Date(),
-        msg: "Connection lost, attempting to reconnect..."
+        msg: "Connection lost, attempting to reconnect... (" + id + ")"
       }));
-    };
-
-    messageReceived = function (messageRaw) { 
-      var parent = document.getElementById("chattrr_out"),
-          tbody = document.getElementById("chattrr_out_tablebody"),
-          holder = document.createElement("tr"),
-          message = JSON.parse(messageRaw),
-          nameHolder = document.createElement("td"),
-          timeHolder = document.createElement("td"),
-          msgHolder = document.createElement("td");
-      if (lostMessages[message.seq]) {
-        delete lostMessages[message.seq];
-      }
-      nameHolder.className = "chattrr_nameHolder";
-      timeHolder.className = "chattrr_timeHolder";
-      msgHolder.className = "chattrr_msgHolder";
-      nameHolder.textContent = message.name;
-      timeHolder.textContent = new Date(message.time).toLocaleTimeString();
-      msgHolder.textContent = message.msg;
-      holder.className = "chattrr_message";
-      tbody.appendChild(holder);
-      holder.appendChild(nameHolder);
-      holder.appendChild(timeHolder);
-      holder.appendChild(msgHolder);
-      //the extra amount takes into account the extra height added 
-      //by the box-shadow
-      parent.scrollTop = parent.scrollHeight - parent.offsetHeight - 15;
+      clearInterval(retryTimeout);
+      retryTimeout = setInterval(tryReconnect, 2000);
     };
     socket.on('message', messageReceived);
-  
-    (function () {
-      var send = function () {
-        var el = document.getElementById('chattrr_in'),
-            msg = {}, 
-            text = el.value,
-            historyCountText,
-            historyCountValue,
-            seq;
-        if (text.match(/^set name:/)) {
-          msg.name = text.substring(10).trim(); 
-        }
-        if (text.match(/^set history depth:/)) {
-          historyCountText = text.substring(18).trim();
-          if (historyCountText) {
-            historyCountValue = parseInt(historyCountText, 10);
-            if (!isNaN(historyCountValue)) {
-              msg.historyCount = historyCountValue;
-            }
-          }
-        }
-        else {
-          msg.msg = text;
-        }
-        history.push(msg);
-        historyIndex = history.length;
-        seq = messageIndex;
-        messageIndex += 1;
-        msg.seq = seq;
-        lostMessages[seq] = msg;
-        if (socket.connected) {
-          socket.send(JSON.stringify(msg));
-        }
-        el.value = "";
-        el.focus();
-      };
-      document.getElementById('chattrr_send').addEventListener(
-        'click', send, false);
-      document.getElementById("chattrr_in").addEventListener("keydown",
-        function (event) {
-          var el = document.getElementById("chattrr_in");
-          if (event.keyCode === 38) {
-            //up
-            if (historyIndex > 0) {
-              historyIndex -= 1;
-              el.value = history[historyIndex].msg;
-            }
-          }
-          else if (event.keyCode === 40) {
-            //down
-            if (historyIndex < history.length - 1) {
-              historyIndex += 1;
-              el.value = history[historyIndex].msg;
-            }
-          }
-        }, false);
-      document.getElementById("chattrr_in").addEventListener("keypress",
-        function (event) {
-          if (event.which === 13) {
-            send();
-          }
-        }, false);
-    }());
   };
   (function () {
     var style, bodyStyle, chattrr, out, table, tableBody, 
