@@ -3,3 +3,6 @@ Chattrr is a chat client that, when installed as a bookmarklet, brings up an are
 It runs on node and requires socket.io-node, redis, express, hashlib, winston and underscore.
 
 It has been tested on firefox and chromium.
+
+Licensed under the GPL License:  http://www.gnu.org/copyleft/gpl.html
+
