@@ -57,6 +57,7 @@
 .chattrr_message * {
   font-size: inherit;
   font-family: inherit;
+  border: none;
 }
 .chattrr_message .chattrr_nameHolder {
   font-weight: bold;
