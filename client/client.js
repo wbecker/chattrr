@@ -25,7 +25,7 @@
     startSockets, socketHolder = {}, retryCount, retryTimeout,
     history = [], historyIndex = 0, 
     lostMessages = {}, messageIndex = 1,
-    lastSetNameTime = 0,
+    lastSetNameTime = 0, lastMessageTime = 0,
     f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
@@ -101,7 +101,7 @@
         }
       }
       else {
-        msg.msg = text.substring(0, 200);
+        f.grabMessage(msg, text);
       }
       history.push(msg);
       historyIndex = history.length;
@@ -154,6 +154,20 @@
         name: "chattrr",
         time: new Date(),
         msg: "You can only set your name once every 10 seconds. Calm down!"
+      }));
+    }
+  };
+  f.grabMessage = function (msg, text) {
+    var now = new Date().getTime();
+    if (now - lastMessageTime > 1000) {
+      msg.msg = text.substring(0, 200);
+      lastMessageTime = now;
+    }
+    else {
+      messageReceived(JSON.stringify({
+        name: "chattrr",
+        time: new Date(),
+        msg: "You can't send more than 1 message every second. Calm down!"
       }));
     }
   };
