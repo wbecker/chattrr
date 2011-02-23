@@ -211,6 +211,7 @@
           f.serverName, urlId);
       }
       else {
+        message.msg = message.msg.substring(0, 200);
         f.saveMessage(message.msg, userToken, urlId);
         f.sendMessage(message.msg, client, userToken, urlId, true, 
           message.seq);

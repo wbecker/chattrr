@@ -96,7 +96,7 @@
         }
       }
       else {
-        msg.msg = text;
+        msg.msg = text.substring(0, 200);
       }
       history.push(msg);
       historyIndex = history.length;
