@@ -69,7 +69,7 @@
     holder.appendChild(msgHolder);
     //the extra amount takes into account the extra height added 
     //by the box-shadow
-    parent.scrollTop = parent.scrollHeight - parent.offsetHeight - 15;
+    parent.scrollTop = parent.scrollHeight - parent.offsetHeight;// - 15;
   };
   connectSendButton = function () {
     if (sendButtonConnected) {
