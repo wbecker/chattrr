@@ -130,7 +130,8 @@
   };
   f.handleUserToken = function (client, message) {
     var userToken = message.userToken, 
-      clientUserTokenVar = f.createClientUserTokenVar(client);
+      clientUserTokenVar = f.createClientUserTokenVar(client),
+      userIdVar = f.getUserIdVar(userToken);
 
     if (userToken) {
       db.set(clientUserTokenVar, userToken);
@@ -138,8 +139,18 @@
         if (!res) {
           db.incr(f.createAnonIndex(), function (err, res) {
             f.setName(userToken, "Anonymous_" + res);
+            db.set(userIdVar, res);
           });
         }
+        //If they don't have a user var because they weren't around
+        //when I was making them, make one!
+        db.get(userIdVar, function (err, userId) {
+          if (!userId) {
+            db.incr(f.createAnonIndex(), function (err, newUserId) {
+              db.set(userIdVar, newUserId);
+            });
+          }
+        });
       });
       f.handleUrl(client, userToken, message);
     }
@@ -292,18 +303,30 @@
     });
   };
   f.formatMessage = function (userToken, time, message, seq, cb) {
-    var formatter = function (err, name) {
-      var msgObj = {name: name, time: time, msg: message};
+    var multi, name, formatter = function (name, id) {
+      var msgObj = {
+        name: name, 
+        time: time, 
+        msg: message,
+        id: id
+      };
       if (seq) {
         msgObj.seq = seq;
       }
       cb(JSON.stringify(msgObj));
     };
     if (userToken === f.serverName) {
-      formatter(null, userToken);
+      formatter(userToken, 0);
     }
     else {
-      db.get(f.createNameVar(userToken), formatter);
+      multi = db.multi();
+      multi.get(f.createNameVar(userToken), function (err, userName) {
+        name = userName;
+      });
+      multi.get(f.getUserIdVar(userToken), function (err, userId) {
+        formatter(name, userId);
+      });
+      multi.exec();
     }
   };
   f.handleDisconnect = function (client) {
@@ -367,6 +390,10 @@
   f.getHistoryDepthVar = function (userToken) {
     return "user:" + userToken + ":historyDepth";
   };
+  f.getUserIdVar = function (userToken) {
+    return "user:" + userToken + ":id";
+  };
+  //"user:uniqueId
   f.createAnonIndex = function () {
     return "user:nextAnonId";
   };

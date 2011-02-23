@@ -32,7 +32,7 @@
   userToken = window.__userToken;
   messageReceived = function (messageRaw) { 
     var message = JSON.parse(messageRaw),
-        parent, tbody, holder, nameHolder, timeHolder, msgHolder;
+        parent, tbody, holder, nameHolder, idHolder, timeHolder, msgHolder;
     if (message.closing) {
       if (socketHolder.socket) {
         socketHolder.socket.disconnect();
@@ -43,6 +43,7 @@
       retryTimeout = setInterval(startSockets, 2000);
       messageReceived(JSON.stringify({
         name: "chattrr",
+        id: 0,
         time: new Date(),
         msg: "Server shutting down. We'll listen for it to come back again."
       }));
@@ -53,20 +54,25 @@
     tbody = document.getElementById("chattrr_out_tablebody");
     holder = document.createElement("tr");
     nameHolder = document.createElement("td");
+    idHolder = document.createElement("td");
     timeHolder = document.createElement("td");
     msgHolder = document.createElement("td");
     if (lostMessages[message.seq]) {
       delete lostMessages[message.seq];
     }
     nameHolder.className = "chattrr_nameHolder";
+    idHolder.className = "chattrr_idHolder";
     timeHolder.className = "chattrr_timeHolder";
     msgHolder.className = "chattrr_msgHolder";
+
     nameHolder.textContent = message.name;
+    idHolder.textContent = message.id;
     timeHolder.textContent = new Date(message.time).toLocaleTimeString();
     msgHolder.textContent = message.msg;
     holder.className = "chattrr_message";
     tbody.appendChild(holder);
     holder.appendChild(nameHolder);
+    holder.appendChild(idHolder);
     holder.appendChild(timeHolder);
     holder.appendChild(msgHolder);
     //the extra amount takes into account the extra height added 
@@ -153,6 +159,7 @@
     else {
       messageReceived(JSON.stringify({
         name: "chattrr",
+        id: 0,
         time: new Date(),
         msg: "You can only set your name once every 10 seconds. Calm down!"
       }));
@@ -167,6 +174,7 @@
     else {
       messageReceived(JSON.stringify({
         name: "chattrr",
+        id: 0,
         time: new Date(),
         msg: "You can't send more than 1 message every second. Calm down!"
       }));
@@ -176,6 +184,7 @@
     var tryReconnect, socket, connectionLost;
     messageReceived(JSON.stringify({
       name: "chattrr",
+      id: 0,
       time: new Date(),
       msg: "Initialising connection, please wait..."
     }));
@@ -222,6 +231,7 @@
       }
       messageReceived(JSON.stringify({
         name: "chattrr",
+        id: 0,
         time: new Date(),
         msg: "Connection lost, attempting to reconnect... (" + id + ")"
       }));

@@ -50,9 +50,16 @@
   box-shadow: none;
   border-width: 0;
 }
-.chattrr_message .chattrr_nameHolder,
+.chattrr_message .chattrr_nameHolder {
+  padding-right: 0.2em;
+}
+.chattrr_message .chattrr_idHolder,
 .chattrr_message .chattrr_timeHolder {
   padding-right: 0.5em;
+}
+.chattrr_message .chattrr_nameHolder,
+.chattrr_message .chattrr_idHolder,
+.chattrr_message .chattrr_timeHolder {
   color: #555555;
   max-width: 10em;
 }
@@ -65,6 +72,11 @@
   font-weight: bold;
   min-width: 9em;
   text-align: right;
+}
+.chattrr_message .chattrr_idHolder {
+  font-size: 0.6em;
+  line-height: 2em;
+  vertical-align: bottom;
 }
 .chattrr_message .chattrr_timeHolder {
 }
