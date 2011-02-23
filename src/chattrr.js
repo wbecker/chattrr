@@ -188,6 +188,7 @@
   };
   f.handleMessageContents = function (client, userToken, message, urlId) {
     if (message.name) {
+      message.name = message.name.substring(0, 16);
       f.setName(userToken, message.name, function (oldName) {
         var toSend = "\"" + oldName + "\" is now called \"" + 
           message.name + "\"";
