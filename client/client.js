@@ -90,7 +90,7 @@
         historyCountText = text.substring(18).trim();
         if (historyCountText) {
           historyCountValue = parseInt(historyCountText, 10);
-          if (!isNaN(historyCountValue)) {
+          if (!isNaN(historyCountValue) && (historyCountValue >= 0)) {
             msg.historyCount = historyCountValue;
           }
         }
@@ -107,6 +107,7 @@
       if (socketHolder.socket && socketHolder.socket.connected) {
         socketHolder.socket.send(JSON.stringify(msg));
       }
+      msg.msg = text;
       el.value = "";
       el.focus();
     };

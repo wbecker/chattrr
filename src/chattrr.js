@@ -26,7 +26,8 @@
       fs = require('fs'),
       util = require('util'),
       redis = require("redis"),
-      hash = require("../../hashlib/build/default/hashlib"),
+//      hash = require("../../hashlib/build/default/hashlib"),
+      hash = require("hashlib"),
       _ = require("underscore"),
       logs = require("winston"),
       express = require("express"),
@@ -106,7 +107,7 @@
     });
   });
 
-  server.listen(80);
+  server.listen(8000);
   socket = io.listen(server, {
     log: logs.info
   });
@@ -195,7 +196,7 @@
         f.sendMessage(toSend, client, f.serverName, urlId, true);
       });
     }
-    else if (message.historyCount) {
+    else if (message.historyCount && (message.historyCount > 0)) {
       db.set(f.getHistoryDepthVar(userToken), message.historyCount, 
         function () {
           f.sendInitialHistory(client, userToken, urlId);
