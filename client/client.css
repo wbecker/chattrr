@@ -38,7 +38,8 @@
 }
 .chattrr_message:nth-child(odd) {
 }
-.chattrr_message:nth-child(even) {
+.chattrr_message:nth-child(even),
+.chattrr_message:nth-child(even) td {
   background-color: #DDDDFF;
 }
 .chattrr_message .chattrr_detailsHolder {
