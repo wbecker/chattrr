@@ -24,7 +24,9 @@
     messageReceived, connectSendButton, sendButtonConnected = false,
     startSockets, socketHolder = {}, retryCount, retryTimeout,
     history = [], historyIndex = 0, 
-    lostMessages = {}, messageIndex = 1;
+    lostMessages = {}, messageIndex = 1,
+    lastSetNameTime = 0,
+    f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
@@ -84,10 +86,10 @@
           historyCountValue,
           seq;
       if (text.match(/^set name:/)) {
-        msg.name = text.substring(9).trim().substring(0, 16); 
+        f.grabName(msg, text.substring(9));
       }
       else if (text.match(/^\\nick /)) {
-        msg.name = text.substring(6).trim().substring(0, 16);
+        f.grabName(msg, text.substring(6));
       }
       if (text.match(/^set history depth:/)) {
         historyCountText = text.substring(18).trim();
@@ -140,6 +142,20 @@
           send();
         }
       }, false);
+  };
+  f.grabName = function (msg, text) {
+    var now = new Date().getTime();
+    if (now - lastSetNameTime > 10000) {
+      msg.name = text.trim().substring(0, 16);
+      lastSetNameTime = now;
+    }
+    else {
+      messageReceived(JSON.stringify({
+        name: "chattrr",
+        time: new Date(),
+        msg: "You can only set your name once every 10 seconds. Calm down!"
+      }));
+    }
   };
   startSockets = function () {
     var tryReconnect, socket, connectionLost;
