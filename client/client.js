@@ -84,7 +84,10 @@
           historyCountValue,
           seq;
       if (text.match(/^set name:/)) {
-        msg.name = text.substring(10).trim().substring(0, 16); 
+        msg.name = text.substring(9).trim().substring(0, 16); 
+      }
+      else if (text.match(/^\\nick /)) {
+        msg.name = text.substring(6).trim().substring(0, 16);
       }
       if (text.match(/^set history depth:/)) {
         historyCountText = text.substring(18).trim();
