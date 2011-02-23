@@ -142,15 +142,17 @@
             db.set(userIdVar, res);
           });
         }
-        //If they don't have a user var because they weren't around
-        //when I was making them, make one!
-        db.get(userIdVar, function (err, userId) {
-          if (!userId) {
-            db.incr(f.createAnonIndex(), function (err, newUserId) {
-              db.set(userIdVar, newUserId);
-            });
-          }
-        });
+        else {
+          //If they don't have a user var because they weren't around
+          //when I was making them, make one!
+          db.get(userIdVar, function (err, userId) {
+            if (!userId) {
+              db.incr(f.createAnonIndex(), function (err, newUserId) {
+                db.set(userIdVar, newUserId);
+              });
+            }
+          });
+        }
       });
       f.handleUrl(client, userToken, message);
     }
