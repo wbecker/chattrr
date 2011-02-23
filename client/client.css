@@ -53,6 +53,7 @@
 .chattrr_message .chattrr_timeHolder {
   padding-right: 0.5em;
   color: #555555;
+  max-width: 10em;
 }
 .chattrr_message * {
   font-size: inherit;
