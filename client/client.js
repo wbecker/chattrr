@@ -170,7 +170,7 @@
         clearInterval(retryTimeout);
       }
       var connectMessage = {};
-      connectMessage.url = document.URL;
+      connectMessage.url = document.host + document.pathname;
       connectMessage.userToken = userToken;
       socket.send(JSON.stringify(connectMessage));
       _(lostMessages).keys().sort().forEach(function (key) {
