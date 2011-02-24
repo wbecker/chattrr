@@ -83,10 +83,7 @@
     holder.appendChild(idHolder);
     holder.appendChild(timeHolder);
     holder.appendChild(msgHolder);
-    //the extra amount takes into account the extra height added 
-    //by the box-shadow in firefox only (Chrome doesn't do it)
-    parent.scrollTop = parent.scrollHeight - parent.offsetHeight - 
-      ((navigator.userAgent.indexOf("Firefox") > 0) ? 15 : 0);
+    parent.scrollTop = parent.scrollHeight - parent.clientHeight;
   };
   connectSendButton = function () {
     if (sendButtonConnected) {
@@ -272,6 +269,7 @@
 
     topBarText = document.createElement("span");
     topBarText.id = "chattrr_topBarText";
+    topBarText.textContent = "Welcome to Chattrr";
     topBar.appendChild(topBarText);
 
   
