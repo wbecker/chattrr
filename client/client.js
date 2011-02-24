@@ -18,7 +18,7 @@
 */
 
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, browser: true, maxerr: 5, maxlen: 80, indent: 2 */
-/*global _, window, io, console*/
+/*global _, window, io */
 (function () {
   var myIp, port, userToken, 
     messageReceived, connectSendButton, sendButtonConnected = false,
@@ -26,6 +26,7 @@
     history = [], historyIndex = 0, 
     lostMessages = {}, messageIndex = 1,
     lastSetNameTime = 0, lastMessageTime = 0,
+    originalMarginBottom,
     f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
@@ -59,6 +60,10 @@
     }
 
     parent = document.getElementById("chattrr_out");
+    if (!parent) {
+      //it's probably been closed
+      return;
+    }
     tbody = document.getElementById("chattrr_out_tablebody");
     holder = document.createElement("tr");
     nameHolder = document.createElement("td");
@@ -103,7 +108,10 @@
       else if (text.match(/^\/nick /)) {
         f.grabName(msg, text.substring(6));
       }
-      if (text.match(/^set history depth:/)) {
+      else if (text.match(/^\/quit/)) {
+        f.closeWindow();
+      }
+      else if (text.match(/^set history depth:/)) {
         historyCountText = text.substring(18).trim();
         if (historyCountText) {
           historyCountValue = parseInt(historyCountText, 10);
@@ -184,6 +192,22 @@
         msg: "You can't send more than 1 message every second. Calm down!"
       }));
     }
+  };
+  f.closeWindow = function () {
+    var chattrr = document.getElementById("chattrr");
+    chattrr.parentNode.removeChild(chattrr);
+    document.body.style.marginBottom = originalMarginBottom;
+    if (socketHolder.socket) {
+      socketHolder.socket.disconnect();
+    }
+    _(document.body.getElementsByTagName("script")).forEach(function (script) {
+      if (script && 
+        ((script.src.indexOf("underscore-min.js") > 0) ||
+        (script.src.indexOf("client.js") > 0) ||
+        (script.src.indexOf("socket.io/socket.io.js") > 0))) {
+        script.parentNode.removeChild(script);
+      }
+    });
   };
   startSockets = function () {
     var tryReconnect, socket, connectionLost;
@@ -271,7 +295,6 @@
     topBarText.id = "chattrr_topBarText";
     topBarText.textContent = "Welcome to Chattrr";
     topBar.appendChild(topBarText);
-
   
     out = document.createElement("div");
     out.id = "chattrr_out";
@@ -301,6 +324,10 @@
     send.id = "chattrr_send";
     send.value = "Send";
     inputHolder.appendChild(send);
+    
+    originalMarginBottom = bodyStyle.marginBottom;
+    document.body.style.marginBottom += 15 * 15 + "px";
+    
     input.focus();
   }());
 

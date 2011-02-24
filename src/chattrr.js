@@ -265,9 +265,11 @@
     else if (message.msg) {
       if (message.msg.match(/^help$/)) {
         f.sendMessage("Available commands:", client, f.serverName, urlId);
-        f.sendMessage("  1. 'set name: <name>'", client, f.serverName, urlId);
+        f.sendMessage("  1. 'set name: <name>', '/nick <name>'", client, 
+          f.serverName, urlId);
         f.sendMessage("  2. 'set history depth: <numberOfLines>'", client, 
           f.serverName, urlId);
+        f.sendMessage("  3. '/quit'", client, f.serverName, urlId);
       }
       else {
         message.msg = message.msg.substring(0, 200);
