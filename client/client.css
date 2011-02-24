@@ -93,6 +93,9 @@
 }
 .chattrr_message .chattrr_timeHolder {
 }
+.chattrr_message .chattrr_msgHolder {
+  color: #000000;
+}
 #chattrr_inputHolder {
   position: absolute;
   width: 100%;
