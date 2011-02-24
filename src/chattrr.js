@@ -31,11 +31,11 @@
       _ = require("underscore"),
       logs = require("winston"),
       express = require("express"),
-      db, server, socket, clients,
+      db, server, socket, clients, bgsaves,
       f = {serverName: "chattrr"};
 
   db = redis.createClient();
-  setInterval(function () {
+  bgsaves = setInterval(function () {
     db.bgsave();
   }, 5 * 60 * 1000);
 
@@ -70,6 +70,7 @@
     server.use(express.staticProvider("client"));
   });
   process.on("exit", function () {
+    clearInterval(bgsaves);
     server.close();
     _(socket.clients).values().forEach(function (client) {
       client.send(JSON.stringify({closing: true}));
@@ -356,6 +357,7 @@
         addr = con.address();
     return addr.address + ":" + addr.port + "(" + con.remotePort + ")";
   };
+
   //Redis keys
   //"url:nextUrlId" - int 
   //  the id to use for the next url
