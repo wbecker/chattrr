@@ -31,7 +31,6 @@
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
   messageReceived = function (messageRaw) { 
-    console.debug(messageRaw);
     var message = JSON.parse(messageRaw),
         topBarText,
         parent, tbody, holder, nameHolder, idHolder, timeHolder, msgHolder;
