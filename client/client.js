@@ -100,7 +100,7 @@
       if (text.match(/^set name:/)) {
         f.grabName(msg, text.substring(9));
       }
-      else if (text.match(/^\\nick /)) {
+      else if (text.match(/^\/nick /)) {
         f.grabName(msg, text.substring(6));
       }
       if (text.match(/^set history depth:/)) {
