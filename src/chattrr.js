@@ -31,13 +31,44 @@
       _ = require("underscore"),
       logs = require("winston"),
       express = require("express"),
-      db, server, socket, clients, bgsaves,
+      db, server, socket, clients, 
+      bgsavesInterval, sendRegularInfoInterval,
       f = {serverName: "chattrr"};
 
   db = redis.createClient();
-  bgsaves = setInterval(function () {
+  bgsavesInterval = setInterval(function () {
     db.bgsave();
   }, 5 * 60 * 1000);
+  sendRegularInfoInterval = setInterval(function () {
+    db.get(f.getNextUrlIdKey(), function (err, maxUrlId) {
+      var i, membersByUrlId, getUrls;
+      getUrls = = db.multi();
+      membersByUrlId = {};
+      for (i = 0; i < maxUrlId; i+=1) {
+        getUrls.get(f.getMembersKey(), function (err, members) {
+          membersByUrlId[i] = members;
+        });
+      }
+      getUrls.exec(function () {
+        var i, j, jj, memberStats, urlMessage;
+	memberStats = {};
+	for (i = 0; i < maxUrlId; i += 1) {
+	  jj = members[i].length
+	  memberStats[i]= {
+	    count = jj;
+	  };
+	}
+	for (i = 0; i < maxUrlId; i += 1) {
+	  jj = members[i].length
+	  urlMessage = JSON.stringify(memberStats[i]);
+	  for (j = 0; j < jj; j += 1) {
+	    client.send(urlMessage);
+	  }
+	}
+      });
+    });
+    
+  }, 60 * 1000);
 
   (function () {
     var now = new Date(),
@@ -70,7 +101,8 @@
     server.use(express.staticProvider("client"));
   });
   process.on("exit", function () {
-    clearInterval(bgsaves);
+    clearInterval(bgsavesInterval);
+    clearInterval(sendRegularInfoInterval);
     server.close();
     _(socket.clients).values().forEach(function (client) {
       client.send(JSON.stringify({closing: true}));
