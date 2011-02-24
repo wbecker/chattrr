@@ -31,7 +31,9 @@
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
   messageReceived = function (messageRaw) { 
+    console.debug(messageRaw);
     var message = JSON.parse(messageRaw),
+        topBarText,
         parent, tbody, holder, nameHolder, idHolder, timeHolder, msgHolder;
     if (message.closing) {
       if (socketHolder.socket) {
@@ -47,6 +49,13 @@
         time: new Date(),
         msg: "Server shutting down. We'll listen for it to come back again."
       }));
+      return;
+    }
+    if (message.count) {
+      topBarText = document.getElementById("chattrr_topBarText");
+      topBarText.textContent = message.count + " Chattrrers lurking";
+    }
+    if (!message.msg) {
       return;
     }
 
@@ -241,7 +250,7 @@
     socket.on('message', messageReceived);
   };
   (function () {
-    var style, bodyStyle, chattrr, out, table, tableBody, 
+    var style, bodyStyle, chattrr, topBar, topBarText, out, table, tableBody, 
       inputHolder, input, send;
     style = document.createElement("link");
     style.rel = "stylesheet";
@@ -257,6 +266,15 @@
     if (bodyStyle.marginLeft) {
       chattrr.style.marginLeft = "-" + bodyStyle.marginLeft;
     }
+
+    topBar = document.createElement("div");
+    topBar.id = "chattrr_topBar";
+    chattrr.appendChild(topBar);
+
+    topBarText = document.createElement("span");
+    topBarText.id = "chattrr_topBarText";
+    topBar.appendChild(topBarText);
+
   
     out = document.createElement("div");
     out.id = "chattrr_out";

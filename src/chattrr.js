@@ -18,7 +18,7 @@
 */
 
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, maxerr: 5, maxlen: 80, indent: 2 */
-/*global require, setInterval, process */
+/*global require, setInterval, clearInterval, process */
 
 (function () {
   var http = require('http'), 
@@ -41,34 +41,47 @@
   }, 5 * 60 * 1000);
   sendRegularInfoInterval = setInterval(function () {
     db.get(f.getNextUrlIdKey(), function (err, maxUrlId) {
-      var i, membersByUrlId, getUrls;
-      getUrls = = db.multi();
+      var urlId, membersByUrlId, getUrls, memberAssigner;
+      getUrls = db.multi();
       membersByUrlId = {};
-      for (i = 0; i < maxUrlId; i+=1) {
-        getUrls.get(f.getMembersKey(), function (err, members) {
-          membersByUrlId[i] = members;
-        });
+      memberAssigner = function (urlId) {
+        return function (err, members) {
+          membersByUrlId[urlId] = members;
+        };
+      };
+      for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+        getUrls.smembers(f.getMembersKey(urlId), memberAssigner(urlId));
       }
       getUrls.exec(function () {
-        var i, j, jj, memberStats, urlMessage;
-	memberStats = {};
-	for (i = 0; i < maxUrlId; i += 1) {
-	  jj = members[i].length
-	  memberStats[i]= {
-	    count = jj;
-	  };
-	}
-	for (i = 0; i < maxUrlId; i += 1) {
-	  jj = members[i].length
-	  urlMessage = JSON.stringify(memberStats[i]);
-	  for (j = 0; j < jj; j += 1) {
-	    client.send(urlMessage);
-	  }
-	}
+        var urlId, clientIndex, clientCount, memberStats, urlMessage, 
+          client, clientId, removeClients, getMembersKey;
+        memberStats = {};
+        for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+          clientCount = membersByUrlId[urlId].length;
+          memberStats[urlId] = {
+            count: clientCount
+          };
+        }
+        removeClients = db.multi();
+        for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+          clientCount = membersByUrlId[urlId].length;
+          urlMessage = JSON.stringify(memberStats[urlId]);
+          getMembersKey = f.getMembersKey(urlId);
+          for (clientIndex = 0; clientIndex < clientCount; clientIndex += 1) {
+            clientId = membersByUrlId[urlId][clientIndex];
+            client = clients[clientId];
+            if (client) {
+              client.send(urlMessage);
+            }
+            else {
+              removeClients.srem(getMembersKey, clientId);
+            }
+          }
+        }
+        removeClients.exec();
       });
     });
-    
-  }, 60 * 1000);
+  }, 20 * 1000);
 
   (function () {
     var now = new Date(),

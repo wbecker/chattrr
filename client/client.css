@@ -11,8 +11,20 @@
   color: #000000;
   z-index: 9999999999;
 }
-#chattrr_out {
+#chattrr_topBar {
+  position: absolute;
+  background-color: #dddddd;
+  height: 1em;
   top: 0;
+  width: 100%;
+  padding-left: 0.5em;
+}
+#chattrr_topBarText {
+  font-family: sans-serif;
+  font-size: 0.75em;
+}
+#chattrr_out {
+  top: 1em;
   bottom: 2.5em;
   position: absolute;
   overflow-y: scroll;
