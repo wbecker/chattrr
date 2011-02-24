@@ -256,7 +256,8 @@
       });
     }
     else if (message.historyCount && (message.historyCount > 0)) {
-      db.set(f.getHistoryDepthVar(userToken), message.historyCount, 
+      db.set(f.getHistoryDepthVar(userToken), 
+        (message.historyCount > 20) ? 20 : message.historyCount, 
         function () {
           f.sendInitialHistory(client, userToken, urlId);
         }

@@ -116,6 +116,9 @@
         if (historyCountText) {
           historyCountValue = parseInt(historyCountText, 10);
           if (!isNaN(historyCountValue) && (historyCountValue >= 0)) {
+            if (historyCountValue > 20) {
+              historyCountValue = 20;
+            }
             msg.historyCount = historyCountValue;
           }
         }
