@@ -33,7 +33,7 @@
   userToken = window.__userToken;
   messageReceived = function (messageRaw) { 
     var message = JSON.parse(messageRaw),
-        topBarText,
+        topBarText, atBottom,
         parent, tbody, holder, nameHolder, idHolder, timeHolder, msgHolder;
     if (message.closing) {
       if (socketHolder.socket) {
@@ -83,12 +83,19 @@
     timeHolder.textContent = new Date(message.time).toLocaleTimeString();
     msgHolder.textContent = message.msg;
     holder.className = "chattrr_message";
+
+    atBottom = (parent.scrollHeight - parent.clientHeight) <
+      (parent.scrollTop + 5);
+
     tbody.appendChild(holder);
     holder.appendChild(nameHolder);
     holder.appendChild(idHolder);
     holder.appendChild(timeHolder);
     holder.appendChild(msgHolder);
-    parent.scrollTop = parent.scrollHeight - parent.clientHeight;
+
+    if (atBottom) {
+      parent.scrollTop = parent.scrollHeight - parent.clientHeight;
+    }
   };
   connectSendButton = function () {
     if (sendButtonConnected) {
