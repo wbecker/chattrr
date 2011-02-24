@@ -26,7 +26,7 @@
     history = [], historyIndex = 0, 
     lostMessages = {}, messageIndex = 1,
     lastSetNameTime = 0, lastMessageTime = 0,
-    originalMarginBottom,
+    originalMarginBottom, 
     f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
@@ -280,7 +280,8 @@
     socket.on('message', messageReceived);
   };
   (function () {
-    var style, bodyStyle, chattrr, topBar, topBarText, out, table, tableBody, 
+    var style, originalScrollTop,
+      bodyStyle, chattrr, topBar, topBarText, out, table, tableBody, 
       inputHolder, input, send;
     style = document.createElement("link");
     style.rel = "stylesheet";
@@ -288,6 +289,8 @@
     style.href = "http://" + myIp + ":" + port + "/client.css";
     document.getElementsByTagName("head")[0].appendChild(style);
   
+    originalScrollTop = document.body.parentNode.scrollTop;
+
     chattrr = document.createElement("div");
     chattrr.id = "chattrr";
     document.body.appendChild(chattrr);
@@ -339,6 +342,8 @@
     document.body.style.marginBottom += 15 * 15 + "px";
     
     input.focus();
+
+    document.body.parentNode.scrollTop = originalScrollTop;
   }());
 
   (function () {
