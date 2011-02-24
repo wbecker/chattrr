@@ -19,6 +19,10 @@
   width: 100%;
   padding: 0 0.25em;
   border: 1px solid #EFEFEF;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  line-height: 0.7em;
 }
 #chattrr_topBarText {
   font-family: sans-serif;
