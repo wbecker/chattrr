@@ -310,6 +310,7 @@
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
+    client.send(JSON.stringify({url: url}));
     f.sendMessage("Welcome to chattrr! You are talking on " + url, 
       client, f.serverName, urlId);
     f.sendMessage(" Type 'help' for more information", 

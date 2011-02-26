@@ -27,6 +27,7 @@
     lostMessages = {}, messageIndex = 1,
     lastSetNameTime = 0, lastMessageTime = 0,
     originalMarginBottom, closed,
+    boardUrl = "<loading board name>",
     f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
@@ -49,9 +50,13 @@
       }));
       return;
     }
+    if (message.url) {
+      boardUrl = message.url;
+    }
     if (message.count) {
       topBarText = document.getElementById("chattrr_topBarText");
-      topBarText.textContent = message.count + " Chattrrers lurking";
+      topBarText.textContent = message.count + " Chattrrers lurking on " + 
+        boardUrl;
     }
     if (message.urls) {
       f.writePopularUrlsToDom(message);  
