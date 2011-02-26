@@ -49,7 +49,7 @@
           membersByUrlId[urlId] = members;
         };
       };
-      for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+      for (urlId = 1; urlId <= maxUrlId; urlId += 1) {
         getUrls.smembers(f.getMembersKey(urlId), memberAssigner(urlId));
       }
       getUrls.exec(function () {
@@ -60,7 +60,7 @@
           return membersByUrlId[urlId].length > 0;
         });
         urlsBySize = _(urlsBySize).sortBy(function (urlId) {
-          return membersByUrlId[urlId].length;
+          return -membersByUrlId[urlId].length;
         });
         urlsBySize = _(urlsBySize).first(20);
         urlsBySizeNames = new Array(urlsBySize.length);
@@ -72,17 +72,20 @@
         });
         getUrls.exec(function () {
           var removeClients, clientId, client, clientIndex, 
-            getMembersKey, memberStats, urlNamesOrdered;
+            getUrlSize, getMembersKey, memberStats, urlNamesOrdered;
           memberStats = {};
-          for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+          getUrlSize = function (urlId) {
+            return membersByUrlId[urlId].length;
+          };
+          for (urlId = 1; urlId <= maxUrlId; urlId += 1) {
             clientCount = membersByUrlId[urlId].length;
             memberStats[urlId] = {
               count: clientCount,
-              urls: _.zip(urlsBySizeNames, _(urlsBySize).map(_.size))
+              urls: _.zip(urlsBySizeNames, _(urlsBySize).map(getUrlSize))
             };
           }
           removeClients = db.multi();
-          for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+          for (urlId = 1; urlId <= maxUrlId; urlId += 1) {
             clientCount = membersByUrlId[urlId].length;
             urlMessage = JSON.stringify(memberStats[urlId]);
             getMembersKey = f.getMembersKey(urlId);
