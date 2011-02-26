@@ -26,7 +26,7 @@
     history = [], historyIndex = 0, 
     lostMessages = {}, messageIndex = 1,
     lastSetNameTime = 0, lastMessageTime = 0,
-    originalMarginBottom, 
+    originalMarginBottom, closed,
     f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
@@ -241,6 +241,7 @@
     var chattrr = document.getElementById("chattrr");
     chattrr.parentNode.removeChild(chattrr);
     document.body.style.marginBottom = originalMarginBottom;
+    closed = true;
     if (socketHolder.socket) {
       socketHolder.socket.disconnect();
     }
@@ -299,6 +300,9 @@
       connectionLost(2);
     });
     connectionLost = function (id) {
+      if (closed) {
+        return;
+      }
       if (socketHolder.socket) {
         delete socketHolder.socket;
       }
@@ -416,6 +420,7 @@
     var script, ensureLoaded, underscoreLoaded = false, socketsLoaded = false;
     ensureLoaded = function () {
       if (underscoreLoaded && socketsLoaded) {
+        closed = false;
         startSockets();
       }
     };
