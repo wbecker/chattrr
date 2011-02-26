@@ -426,7 +426,8 @@
   f.formatAddress = function (client) {
     var con = client.connection,
         addr = con.address();
-    return addr.address + ":" + addr.port + "(" + con.remotePort + ")";
+    return con.remoteAddress + ":" + con.remotePort + 
+      "(" + addr.address + ":" + addr.port + ")";
   };
 
   //Redis keys
