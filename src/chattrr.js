@@ -159,21 +159,6 @@
       res.redirect("/client.htm?userToken=" + 
         hash.md5(Math.random().toString()));
     }
-    fs.readFile('client' + url, "binary", function (err, file) {
-      if (!err) {
-        var content = 'text/html';
-        if (url.substring(url.lastIndexOf('.')) === ".css") {
-          content = "text/css";
-        }
-        res.writeHead(200, {'Content-Type': content});
-        res.write(file, 'binary');
-      }
-      else {
-        res.writeHead(500, {'Content-Type': 'text/html'});
-        res.write(err);
-      }
-      res.end();
-    });
   });
 
   server.listen(8000);
