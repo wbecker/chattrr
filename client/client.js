@@ -67,7 +67,7 @@
       infoHolder.removeChild(infoHolder.lastChild);
     }
     message.urls.forEach(function (urlInfo) {
-      var line, url, users;
+      var line, url, link, users;
       line = document.createElement("tr");
       line.className = "chattrr_out_info_line";
       infoHolder.appendChild(line);
@@ -79,9 +79,14 @@
       url = document.createElement("td");
       url.className = "chattrr_out_info_line_url";
       line.appendChild(url);
+      
+      link = document.createElement("a");
+      link.className = "chattrr_out_info_line_urllink";
+      url.appendChild(link);
 
       users.textContent = urlInfo[1];
-      url.textContent = urlInfo[0];
+      link.href = urlInfo[0];
+      link.textContent = urlInfo[0];
     });
   };
   f.writeMessageToDom = function (message) {
@@ -289,7 +294,8 @@
         clearInterval(retryTimeout);
       }
       var connectMessage = {};
-      connectMessage.url = document.location.host + document.location.pathname;
+      connectMessage.url = document.location.protocol + "//" + 
+        document.location.host + document.location.pathname;
       connectMessage.userToken = userToken;
       socket.send(JSON.stringify(connectMessage));
       _(lostMessages).keys().sort().forEach(function (key) {

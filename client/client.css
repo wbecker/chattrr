@@ -75,6 +75,11 @@
   white-space: nowrap;
   padding-left: 0.5em;
 }
+.chattrr_out_info_line_urllink,
+.chattrr_out_info_line_urllink:visited {
+  color: black;
+  text-decoration: none;
+}
 .chattrr_out_info_line:nth-child(odd) {
   background-color: #eeeeee;
 }
