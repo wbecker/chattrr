@@ -295,27 +295,25 @@
         db.incr(f.getNextUrlIdKey(), function (err, urlId) {
           db.set(urlIdForHashKey, urlId);
           db.set(f.getUrlForUrlId(urlId), url, function () {
-            f.handleNewUrl(client, userToken, message, urlId);
+            f.handleNewUrl(client, userToken, message, urlId, url);
           });
         });
       }
       else {
-        f.handleNewUrl(client, userToken, message, urlId);
+        f.handleNewUrl(client, userToken, message, urlId, url);
       }
     });
   };
   
-  f.handleNewUrl = function (client, userToken, message, urlId) {
+  f.handleNewUrl = function (client, userToken, message, urlId, url) {
     var clientUrlKey = f.getClientUrlKey(client);
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
-    db.get(f.getUrlForUrlId(urlId), function (err, url) {
-      f.sendMessage("Welcome to chattrr! You are talking on " + url, 
-        client, f.serverName, urlId);
-      f.sendMessage(" Type 'help' for more information", 
-        client, f.serverName, urlId);
-    });
+    f.sendMessage("Welcome to chattrr! You are talking on " + url, 
+      client, f.serverName, urlId);
+    f.sendMessage(" Type 'help' for more information", 
+      client, f.serverName, urlId);
     f.handleMessageContents(client, userToken, message, urlId);
   };
   f.handleMessageContents = function (client, userToken, message, urlId) {
