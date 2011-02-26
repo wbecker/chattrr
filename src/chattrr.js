@@ -53,32 +53,52 @@
         getUrls.smembers(f.getMembersKey(urlId), memberAssigner(urlId));
       }
       getUrls.exec(function () {
-        var urlId, clientIndex, clientCount, memberStats, urlMessage, 
-          client, clientId, removeClients, getMembersKey;
-        memberStats = {};
-        for (urlId = 0; urlId < maxUrlId; urlId += 1) {
-          clientCount = membersByUrlId[urlId].length;
-          memberStats[urlId] = {
-            count: clientCount
-          };
-        }
-        removeClients = db.multi();
-        for (urlId = 0; urlId < maxUrlId; urlId += 1) {
-          clientCount = membersByUrlId[urlId].length;
-          urlMessage = JSON.stringify(memberStats[urlId]);
-          getMembersKey = f.getMembersKey(urlId);
-          for (clientIndex = 0; clientIndex < clientCount; clientIndex += 1) {
-            clientId = membersByUrlId[urlId][clientIndex];
-            client = clients[clientId];
-            if (client) {
-              client.send(urlMessage);
-            }
-            else {
-              removeClients.srem(getMembersKey, clientId);
+        var urlId, clientCount, urlMessage, 
+	  getUrls, urlsBySize, urlsBySizeNames;
+	urlsBySize = _(membersByUrlId).keys();
+	urlsBySize = _(urlsBySize).select(function (urlId) {
+	  return membersByUrlId[urlId].length > 0;
+	});
+	urlsBySize = _(urlsBySize).sortBy(function (urlId) {
+	  return membersByUrlId[urlId].length;
+	});
+	urlsBySize = _(urlsBySize).first(20);
+        urlsBySizeNames = new Array(urlsBySize.length);
+	getUrls = db.multi();
+	urlsBySize.forEach(function (urlId, index) {
+	  getUrls.get(f.getUrlForUrlId(urlId), _(function (index, err, url) {
+	    urlsBySizeNames[index] = url;
+	  }).bind(this, index));
+	});
+	getUrls.exec(function () {
+	  var removeClients, clientId, client, clientIndex, 
+	    getMembersKey, memberStats, urlNamesOrdered;
+       	  memberStats = {};
+          for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+            clientCount = membersByUrlId[urlId].length;
+            memberStats[urlId] = {
+              count: clientCount,
+	      urls: _.zip(urlsBySizeNames, _(urlsBySize).map(_.size))
+            };
+          }
+          removeClients = db.multi();
+          for (urlId = 0; urlId < maxUrlId; urlId += 1) {
+            clientCount = membersByUrlId[urlId].length;
+            urlMessage = JSON.stringify(memberStats[urlId]);
+            getMembersKey = f.getMembersKey(urlId);
+            for (clientIndex = 0; clientIndex < clientCount; clientIndex += 1) {
+              clientId = membersByUrlId[urlId][clientIndex];
+              client = clients[clientId];
+              if (client) {
+                client.send(urlMessage);
+              }
+              else {
+                removeClients.srem(getMembersKey, clientId);
+              }
             }
           }
-        }
-        removeClients.exec();
+          removeClients.exec();
+        });
       });
     });
   }, 20 * 1000);
@@ -335,15 +355,15 @@
   f.sendMessage = function (toSend, client, userToken, urlId, broadcast, seq) {
     f.formatMessage(userToken, new Date(), toSend, seq, function (message) {
       if (broadcast) {
-        var membersKey = f.getMembersKey(urlId);
-        db.smembers(membersKey, function (err, clientSessionIds) {
+        var getMembersKey = f.getMembersKey(urlId);
+        db.smembers(getMembersKey, function (err, clientSessionIds) {
           clientSessionIds.forEach(function (sessionId) {
             if (clients.hasOwnProperty(sessionId)) {
               clients[sessionId].send(message);
             }
             else {
               //Don't know "sessionId" anymore
-              db.srem(membersKey, sessionId);
+              db.srem(getMembersKey, sessionId);
             }
           });
         });
