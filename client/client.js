@@ -193,12 +193,18 @@
             el.value = history[historyIndex].msg;
           }
         }
+        event.stopPropagation();
+      }, false);
+    document.getElementById("chattrr_in").addEventListener("keyup",
+      function (event) {
+        event.stopPropagation();
       }, false);
     document.getElementById("chattrr_in").addEventListener("keypress",
       function (event) {
         if (event.which === 13) {
           send();
         }
+        event.stopPropagation();
       }, false);
   };
   f.grabName = function (msg, text) {
