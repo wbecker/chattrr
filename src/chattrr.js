@@ -21,11 +21,11 @@
 /*global require, setInterval, clearInterval, process */
 
 (function () {
-  var http = require('http'), 
+  var http = require("http"), 
       urlLib = require("url"),
-      io = require('socket.io'),
-      fs = require('fs'),
-      util = require('util'),
+      io = require("socket.io"),
+      fs = require("fs"),
+      util = require("util"),
       redis = require("redis"),
 //      hash = require("../../hashlib/build/default/hashlib"),
       hash = require("hashlib"),
@@ -172,14 +172,14 @@
   f.createConnection = function (client) {
     var address = client.connection.address();
     clients[client.sessionId] = client;
-    logs.info('client connected: ' + f.formatAddress(client));
-    client.on('message', f.handleMessage(client));
-    client.on('disconnect', f.handleDisconnect(client)); 
+    logs.info("client connected: " + f.formatAddress(client));
+    client.on("message", f.handleMessage(client));
+    client.on("disconnect", f.handleDisconnect(client)); 
   };
   f.handleMessage = function (client) {
     return function (rawMessage) { 
-      logs.info('message received from: ' + f.formatAddress(client) + 
-        ' - ' + rawMessage); 
+      logs.info("message received from: " + f.formatAddress(client) + 
+        " - " + rawMessage); 
       var message = JSON.parse(rawMessage);
       f.handleUserToken(client, message);
     };
@@ -461,7 +461,7 @@
   f.handleDisconnect = function (client) {
     return function () { 
       var con = client.connection;
-      logs.info('client disconnected: ' + 
+      logs.info("client disconnected: " + 
         con.remoteAddress + ":" + con.remotePort); 
       f.removeClient(client);
       delete clients[client.sessionId];
@@ -477,7 +477,7 @@
     multi.del(f.createClientUserTokenVar(client));
     multi.exec();
   };
-  socket.on('connection', f.createConnection);
+  socket.on("connection", f.createConnection);
   f.formatAddress = function (client) {
     var con = client.connection,
         addr = con.address();

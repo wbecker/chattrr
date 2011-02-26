@@ -141,7 +141,7 @@
     }
     sendButtonConnected = true;
     var send = function () {
-      var el = document.getElementById('chattrr_in'),
+      var el = document.getElementById("chattrr_in"),
           msg = {}, 
           text = el.value,
           seq,
@@ -203,8 +203,8 @@
       el.value = "";
       el.focus();
     };
-    document.getElementById('chattrr_send').addEventListener(
-      'click', send, false);
+    document.getElementById("chattrr_send").addEventListener(
+      "click", send, false);
     document.getElementById("chattrr_in").addEventListener("keydown",
       function (event) {
         var el = document.getElementById("chattrr_in");
@@ -345,7 +345,7 @@
     socket.on("connect_failed", function () {
       connectionLost(1);
     });
-    socket.on('connect', function () {
+    socket.on("connect", function () {
       socketHolder.socket = socket;
       if (retryTimeout) {
         clearInterval(retryTimeout);
@@ -359,7 +359,7 @@
       });
       f.connectSendButton();
     });
-    socket.on('disconnect', function () { 
+    socket.on("disconnect", function () { 
       connectionLost(2);
     });
     connectionLost = function (id) {
@@ -378,7 +378,7 @@
       clearInterval(retryTimeout);
       retryTimeout = setInterval(tryReconnect, 2000);
     };
-    socket.on('message', f.messageReceived);
+    socket.on("message", f.messageReceived);
   };
   (function () {
     var chattrrStyle, originalScrollTop, bodyStyle, chattrr; 
