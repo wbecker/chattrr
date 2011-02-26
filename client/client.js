@@ -152,6 +152,10 @@
         f.closeWindow();
         return;
       }
+      else if (text.match(/^\/reload/)) {
+        f.reloadWindow();
+        return;
+      }
       else if (text.match(/^set history depth:/)) {
         historyCountText = text.substring(18).trim();
         if (historyCountText) {
@@ -259,6 +263,13 @@
         script.parentNode.removeChild(script);
       }
     });
+  };
+  f.reloadWindow = function () {
+    var script;
+    f.closeWindow();
+    script = document.createElement("script");
+    script.src = "http://" + myIp + ":" + port + "/client.js";
+    document.body.appendChild(script);
   };
   startSockets = function () {
     var tryReconnect, socket, connectionLost;
