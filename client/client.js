@@ -161,6 +161,9 @@
         f.reloadWindow();
         return;
       }
+      else if (text.match(/^\/force/)) {
+        f.forceUrl(msg);
+      }
       else if (text.match(/^set history depth:/)) {
         historyCountText = text.substring(18).trim();
         if (historyCountText) {
@@ -276,6 +279,14 @@
     script.src = "http://" + myIp + ":" + port + "/client.js";
     document.body.appendChild(script);
   };
+  f.forceUrl = function (msg) {
+    msg.forceUrl = true;
+    msg.url = f.createUrl();
+  };
+  f.createUrl = function () {
+    var loc = document.location;
+    return loc.protocol + "//" + loc.host + loc.pathname;
+  };
   startSockets = function () {
     var tryReconnect, socket, connectionLost;
     f.messageReceived(JSON.stringify({
@@ -310,8 +321,7 @@
         clearInterval(retryTimeout);
       }
       var connectMessage = {};
-      connectMessage.url = document.location.protocol + "//" + 
-        document.location.host + document.location.pathname;
+      connectMessage.url = f.createUrl();
       connectMessage.userToken = userToken;
       socket.send(JSON.stringify(connectMessage));
       _(lostMessages).keys().sort().forEach(function (key) {

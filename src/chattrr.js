@@ -219,7 +219,10 @@
     }
   };
   f.handleUrl = function (client, userToken, message) {
-    if (message.url) {
+    if (message.forceUrl) {
+      f.handleDecidedUrl(client, userToken, message, message.url);
+    }
+    else if (message.url) {
       f.decideUrl(client, userToken, message);
     }
     else {
@@ -325,6 +328,10 @@
           message.name + "\"";
         f.sendMessage(toSend, client, f.serverName, urlId, true);
       });
+    }
+    else if (message.forceUrl) {
+      //handled elsewhere  
+      message.forceUrl = message.forceUrl;
     }
     else if (message.historyCount && (message.historyCount > 0)) {
       db.set(f.getHistoryDepthVar(userToken), 
