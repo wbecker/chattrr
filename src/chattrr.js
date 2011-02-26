@@ -54,31 +54,31 @@
       }
       getUrls.exec(function () {
         var urlId, clientCount, urlMessage, 
-	  getUrls, urlsBySize, urlsBySizeNames;
-	urlsBySize = _(membersByUrlId).keys();
-	urlsBySize = _(urlsBySize).select(function (urlId) {
-	  return membersByUrlId[urlId].length > 0;
-	});
-	urlsBySize = _(urlsBySize).sortBy(function (urlId) {
-	  return membersByUrlId[urlId].length;
-	});
-	urlsBySize = _(urlsBySize).first(20);
+        getUrls, urlsBySize, urlsBySizeNames;
+        urlsBySize = _(membersByUrlId).keys();
+        urlsBySize = _(urlsBySize).select(function (urlId) {
+          return membersByUrlId[urlId].length > 0;
+        });
+        urlsBySize = _(urlsBySize).sortBy(function (urlId) {
+          return membersByUrlId[urlId].length;
+        });
+        urlsBySize = _(urlsBySize).first(20);
         urlsBySizeNames = new Array(urlsBySize.length);
-	getUrls = db.multi();
-	urlsBySize.forEach(function (urlId, index) {
-	  getUrls.get(f.getUrlForUrlId(urlId), _(function (index, err, url) {
-	    urlsBySizeNames[index] = url;
-	  }).bind(this, index));
-	});
-	getUrls.exec(function () {
-	  var removeClients, clientId, client, clientIndex, 
-	    getMembersKey, memberStats, urlNamesOrdered;
-       	  memberStats = {};
+        getUrls = db.multi();
+        urlsBySize.forEach(function (urlId, index) {
+          getUrls.get(f.getUrlForUrlId(urlId), _(function (index, err, url) {
+            urlsBySizeNames[index] = url;
+          }).bind(this, index));
+        });
+        getUrls.exec(function () {
+          var removeClients, clientId, client, clientIndex, 
+            getMembersKey, memberStats, urlNamesOrdered;
+          memberStats = {};
           for (urlId = 0; urlId < maxUrlId; urlId += 1) {
             clientCount = membersByUrlId[urlId].length;
             memberStats[urlId] = {
               count: clientCount,
-	      urls: _.zip(urlsBySizeNames, _(urlsBySize).map(_.size))
+              urls: _.zip(urlsBySizeNames, _(urlsBySize).map(_.size))
             };
           }
           removeClients = db.multi();
