@@ -58,6 +58,8 @@
   right: 0;
   top: 0;
   width: 30%;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 #chattrr_out_infoTable {
   width: 100%;
