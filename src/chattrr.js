@@ -22,6 +22,7 @@
 
 (function () {
   var http = require('http'), 
+      urlLib = require("url"),
       io = require('socket.io'),
       fs = require('fs'),
       util = require('util'),
@@ -33,6 +34,7 @@
       express = require("express"),
       db, server, socket, clients, 
       bgsavesInterval, sendRegularInfoInterval,
+      minBoardSize = 2, maxBoardSize = 4, everyoneUrl = "everyone",
       f = {serverName: "chattrr"};
 
   db = redis.createClient();
@@ -217,32 +219,94 @@
     }
   };
   f.handleUrl = function (client, userToken, message) {
-    var clientUrlKey = f.getClientUrlKey(client), urlHash, urlIdForHashKey;
     if (message.url) {
-      urlHash = hash.md5(message.url);
-      urlIdForHashKey = f.getUrlIdForHashKey(urlHash);
-      db.get(urlIdForHashKey, function (err, urlId) {
-        if (!urlId) {
-          db.incr(f.getNextUrlIdKey(), function (err, urlId) {
-            db.set(urlIdForHashKey, urlId);
-            db.set(f.getUrlForUrlId(urlId), message.url, function () {
-              f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
-            });
-          });
-        }
-        else {
-          f.handleNewUrl(client, userToken, message, clientUrlKey, urlId);
-        }
-      });
+      f.decideUrl(client, userToken, message);
     }
     else {
-      db.get(clientUrlKey, function (err, urlId) {
+      db.get(f.getClientUrlKey(client), function (err, urlId) {
         f.handleMessageContents(client, userToken, message, urlId);
       });
     }
   };
+  f.decideUrl = function (client, userToken, message) {
+    var urlObj, host, pathname, paths, urlsToCheck, builtUrl;
+    urlObj = urlLib.parse(message.url); 
+    host = urlObj.hostname;
+    pathname = urlObj.pathname;
+    if (pathname.charAt(0) === "/") {
+      pathname = pathname.substring(1);
+    }
+    urlsToCheck = [];
+    urlsToCheck.push(everyoneUrl);
+    urlsToCheck.push(host);
+    if (pathname.indexOf("/") >= 0) {
+      paths = pathname.split("/");
+      builtUrl = host;
+      _(paths).first(paths.length - 1).forEach(function (path) {
+        builtUrl += "/" + path;
+        urlsToCheck.push(builtUrl);
+      });
+    }
+    urlsToCheck.push(host + "/" + pathname);
+    urlsToCheck = urlsToCheck.reverse();
+    (function () {
+      var getHashes, urlIds, addUrl, urlIdAssigner;
+      getHashes = db.multi();
+      urlIds = [];
+      urlIdAssigner = function (err, urlId) {
+        urlIds.push(urlId);
+      };
+      urlsToCheck.forEach(function (url, index) {
+        getHashes.get(f.getUrlIdForHashKey(hash.md5(url)), urlIdAssigner);
+      });
+      getHashes.exec(function () {
+        var getMembers, urlCounts, urlCountAssigner;
+        urlCounts = [];
+        getMembers = db.multi();
+        urlCountAssigner = function (err, members) {
+          urlCounts.push(members.length);
+        };
+        urlIds.forEach(function (urlId, index) {
+          getMembers.smembers(f.getMembersKey(urlId), urlCountAssigner);
+        });
+        getMembers.exec(function () {
+          var i, ii;
+          for (i = 0, ii = urlsToCheck.length - 1; i < ii; i += 1) {
+            if (
+               (urlCounts[i] >= minBoardSize) || 
+               (urlCounts[i + 1] > maxBoardSize)
+             ) {
+              f.handleDecidedUrl(client, userToken, message, urlsToCheck[i]);
+              return;
+            }
+          }
+          f.handleDecidedUrl(client, userToken, message, everyoneUrl);
+        });
+      });
+    }());
+  };
+  f.handleDecidedUrl = function (client, userToken, message, url) {
+    logs.info("decided on " + url + " for " + f.formatAddress(client));
+    var urlHash, urlIdForHashKey;
+    urlHash = hash.md5(url);
+    urlIdForHashKey = f.getUrlIdForHashKey(urlHash);
+    db.get(urlIdForHashKey, function (err, urlId) {
+      if (!urlId) {
+        db.incr(f.getNextUrlIdKey(), function (err, urlId) {
+          db.set(urlIdForHashKey, urlId);
+          db.set(f.getUrlForUrlId(urlId), url, function () {
+            f.handleNewUrl(client, userToken, message, urlId);
+          });
+        });
+      }
+      else {
+        f.handleNewUrl(client, userToken, message, urlId);
+      }
+    });
+  };
   
-  f.handleNewUrl = function (client, userToken, message, clientUrlKey, urlId) {
+  f.handleNewUrl = function (client, userToken, message, urlId) {
+    var clientUrlKey = f.getClientUrlKey(client);
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
