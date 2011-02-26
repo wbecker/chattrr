@@ -55,6 +55,9 @@
       topBarText = document.getElementById("chattrr_topBarText");
       topBarText.textContent = message.count + " Chattrrers lurking";
     }
+    if (message.urls) {
+      
+    }
     if (!message.msg) {
       return;
     }
@@ -281,7 +284,8 @@
   };
   (function () {
     var style, originalScrollTop,
-      bodyStyle, chattrr, topBar, topBarText, out, table, tableBody, 
+      bodyStyle, chattrr, topBar, topBarText, out, 
+      tableHolder, table, tableBody, 
       inputHolder, input, send;
     style = document.createElement("link");
     style.rel = "stylesheet";
@@ -312,12 +316,20 @@
     out = document.createElement("div");
     out.id = "chattrr_out";
     chattrr.appendChild(out);
+
+    tableHolder = document.createElement("div");
+    tableHolder.id = "chattrr_tableHolder";
+    out.appendChild(tableHolder);
     
     table = document.createElement("table");
     table.id = "chattrr_out_table";
     table.cellSpacing = 0;
     table.cellPadding = 0;
-    out.appendChild(table);
+    tableHolder.appendChild(table);
+
+    info = document.createElement("div");
+    info.id = "chattr_info";
+    out.appendChild(info);
     
     tableBody = document.createElement("tbody");
     tableBody.id = "chattrr_out_tablebody";
