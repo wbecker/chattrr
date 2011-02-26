@@ -34,7 +34,7 @@
       express = require("express"),
       db, server, socket, clients, 
       bgsavesInterval, sendRegularInfoInterval,
-      minBoardSize = 4, maxBoardSize = 15, everyoneUrl = "chattrr.net",
+      minBoardSize = 4, maxBoardSize = 15, everyoneUrl = "http://chattrr.net",
       f = {serverName: "chattrr"};
 
   db = redis.createClient();
