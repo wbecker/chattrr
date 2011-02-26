@@ -342,20 +342,10 @@
       );
     }
     else if (message.msg) {
-      if (message.msg.match(/^help$/)) {
-        f.sendMessage("Available commands:", client, f.serverName, urlId);
-        f.sendMessage("  1. 'set name: <name>', '/nick <name>'", client, 
-          f.serverName, urlId);
-        f.sendMessage("  2. 'set history depth: <numberOfLines>'", client, 
-          f.serverName, urlId);
-        f.sendMessage("  3. '/quit'", client, f.serverName, urlId);
-      }
-      else {
-        message.msg = message.msg.substring(0, 200);
-        f.saveMessage(message.msg, userToken, urlId);
-        f.sendMessage(message.msg, client, userToken, urlId, true, 
-          message.seq);
-      }
+      message.msg = message.msg.substring(0, 200);
+      f.saveMessage(message.msg, userToken, urlId);
+      f.sendMessage(message.msg, client, userToken, urlId, true, 
+        message.seq);
     }
   };
   f.sendInitialHistory = function (client, userToken, urlId) {

@@ -32,6 +32,14 @@
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
+  f.showMessage = function (text) {
+    f.messageReceived(JSON.stringify({
+      name: "chattrr",
+      id: 0,
+      time: new Date(),
+      msg: text
+    }));
+  };
   f.messageReceived = function (messageRaw) { 
     var message = JSON.parse(messageRaw), topBarText;
     if (message.closing) {
@@ -42,12 +50,8 @@
         clearInterval(retryTimeout);
       }
       retryTimeout = setInterval(startSockets, 2000);
-      f.messageReceived(JSON.stringify({
-        name: "chattrr",
-        id: 0,
-        time: new Date(),
-        msg: "Server shutting down. We'll listen for it to come back again."
-      }));
+      f.showMessage(
+        "Server shutting down. We'll listen for it to come back again.");
       return;
     }
     if (message.url) {
@@ -180,6 +184,11 @@
         sendText = false;
         f.grabDepth(msg, text.substring(7));
       }
+      else if (text.match(/^\/help/)) {
+        f.showHelp();
+        sendMessage = false;
+        sendText = false;
+      }
       else {
         f.grabMessage(msg, text);
       }
@@ -243,12 +252,8 @@
       lastSetNameTime = now;
     }
     else {
-      f.messageReceived(JSON.stringify({
-        name: "chattrr",
-        id: 0,
-        time: new Date(),
-        msg: "You can only set your name once every 10 seconds. Calm down!"
-      }));
+      f.showMessage(
+        "You can only set your name once every 10 seconds. Calm down!");
     }
   };
   f.grabDepth = function (msg, text) {
@@ -264,6 +269,27 @@
       }
     }
   };
+  f.showHelp = function () {
+    f.showMessage("Welcome to chattrr, an in-place chat application!");
+    f.showMessage("On the left is where the messages go. On the right, " +
+      "you will see the most popular channels.");
+    f.showMessage("When you load chattrr, it will talk on the current " +
+      "url if there is enough activity. Otherwise it will keeping " +
+      "going up a path, up to the host name, until it finds one where " +
+      "there is sufficient activity. If there are not enough people " +
+      "talking on the host, then you will talk on the common " +
+      "'everybody' chattrr channel. You can override this behaviour " +
+      "with the /force command (see below)");
+    f.showMessage("Available commands:");
+    f.showMessage("  1. '/nick <name>' - set your display name");
+    f.showMessage("  2. '/depth: <numberOfLines>' - set how many lines " +
+      "display when you reload, and shows that many rows right away.");
+    f.showMessage("  3. '/quit' - closes chattrr, keeping your website " +
+      "open");
+    f.showMessage("  4. '/clear' - clear your message history");
+    f.showMessage("  5. '/force' - forces chattrr to talk on the " +
+      "current url, regardless of its activity");
+  };
   f.grabMessage = function (msg, text) {
     var now = new Date().getTime();
     if (now - lastMessageTime > 1000) {
@@ -271,12 +297,8 @@
       lastMessageTime = now;
     }
     else {
-      f.messageReceived(JSON.stringify({
-        name: "chattrr",
-        id: 0,
-        time: new Date(),
-        msg: "You can't send more than 1 message every second. Calm down!"
-      }));
+      f.showMessage(
+        "You can't send more than 1 message every second. Calm down!");
     }
   };
   f.closeWindow = function () {
@@ -319,12 +341,7 @@
   };
   startSockets = function () {
     var tryReconnect, socket, connectionLost;
-    f.messageReceived(JSON.stringify({
-      name: "chattrr",
-      id: 0,
-      time: new Date(),
-      msg: "Initialising connection, please wait..."
-    }));
+    f.showMessage("Initialising connection, please wait...");
     retryCount = 0;
 
     socket = new io.Socket(myIp, {port: port});
@@ -369,12 +386,8 @@
       if (socketHolder.socket) {
         delete socketHolder.socket;
       }
-      f.messageReceived(JSON.stringify({
-        name: "chattrr",
-        id: 0,
-        time: new Date(),
-        msg: "Connection lost, attempting to reconnect... (" + id + ")"
-      }));
+      f.showMessage(
+        "Connection lost, attempting to reconnect... (" + id + ")");
       clearInterval(retryTimeout);
       retryTimeout = setInterval(tryReconnect, 2000);
     };
