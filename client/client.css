@@ -131,7 +131,7 @@
 }
 .chattrr_message .chattrr_nameHolder {
   font-weight: bold;
-  min-width: 9em;
+  min-width: 7em;
   text-align: right;
 }
 .chattrr_message .chattrr_idHolder {
@@ -143,6 +143,7 @@
 }
 .chattrr_message .chattrr_msgHolder {
   color: #000000;
+  width: 100%;
 }
 #chattrr_inputHolder {
   position: absolute;

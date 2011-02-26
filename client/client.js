@@ -144,18 +144,25 @@
       var el = document.getElementById('chattrr_in'),
           msg = {}, 
           text = el.value,
-          historyCountText,
-          historyCountValue,
-          seq;
+          seq,
+          sendText = true,
+          sendMessage = true;
       if (text.match(/^set name:/)) {
+        sendText = false;
         f.grabName(msg, text.substring(9));
       }
       else if (text.match(/^\/nick /)) {
+        sendText = false;
         f.grabName(msg, text.substring(6));
       }
       else if (text.match(/^\/quit/)) {
         f.closeWindow();
         return;
+      }
+      else if (text.match(/^\/clear/)) {
+        f.clearHistory();
+        sendMessage = false;
+        sendText = false;
       }
       else if (text.match(/^\/reload/)) {
         f.reloadWindow();
@@ -163,32 +170,32 @@
       }
       else if (text.match(/^\/force/)) {
         f.forceUrl(msg);
+        sendText = false;
       }
       else if (text.match(/^set history depth:/)) {
-        historyCountText = text.substring(18).trim();
-        if (historyCountText) {
-          historyCountValue = parseInt(historyCountText, 10);
-          if (!isNaN(historyCountValue) && (historyCountValue >= 0)) {
-            if (historyCountValue > 20) {
-              historyCountValue = 20;
-            }
-            msg.historyCount = historyCountValue;
-          }
-        }
+        sendText = false;
+        f.grabDepth(msg, text.substring(18));
       }
       else {
         f.grabMessage(msg, text);
       }
+      if (sendText) {
+        seq = messageIndex;
+        messageIndex += 1;
+        msg.seq = seq;
+        msg.msg = text;
+        lostMessages[seq] = msg;
+      }
       history.push(msg);
       historyIndex = history.length;
-      seq = messageIndex;
-      messageIndex += 1;
-      msg.seq = seq;
-      lostMessages[seq] = msg;
-      if (socketHolder.socket && socketHolder.socket.connected) {
-        socketHolder.socket.send(JSON.stringify(msg));
+      if (sendMessage) {
+        if (socketHolder.socket && socketHolder.socket.connected) {
+          socketHolder.socket.send(JSON.stringify(msg));
+        }
       }
-      msg.msg = text;
+      if (!sendText) {
+        msg.msg = text;
+      }
       el.value = "";
       el.focus();
     };
@@ -240,6 +247,19 @@
       }));
     }
   };
+  f.grabDepth = function (msg, text) {
+    var historyCountText, historyCountValue;
+    historyCountText = text.trim();
+    if (historyCountText) {
+      historyCountValue = parseInt(historyCountText, 10);
+      if (!isNaN(historyCountValue) && (historyCountValue >= 0)) {
+        if (historyCountValue > 20) {
+          historyCountValue = 20;
+        }
+        msg.historyCount = historyCountValue;
+      }
+    }
+  };
   f.grabMessage = function (msg, text) {
     var now = new Date().getTime();
     if (now - lastMessageTime > 1000) {
@@ -271,6 +291,12 @@
         script.parentNode.removeChild(script);
       }
     });
+  };
+  f.clearHistory = function () {
+    var tableBody = document.getElementById("chattrr_out_tablebody");
+    while (tableBody.hasChildNodes()) {
+      tableBody.removeChild(tableBody.lastChild);
+    }
   };
   f.reloadWindow = function () {
     var script;
