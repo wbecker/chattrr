@@ -42,19 +42,22 @@
   padding: 0;
   margin: 0;
 }
-#chattrr_out_tableHolder {
+#chattrr_out_tableHolder, 
+#chattrr_out_infoTableHolder {
   position: absolute;
-  width: 70%;
   height: 100%;
+  padding: 0; 
+  border-width: 0;
+}
+#chattrr_out_tableHolder {
+  width: 70%;
   overflow-y: scroll;
   overflow-x: hidden;
 }
 #chattrr_out_infoTableHolder {
-  position: absolute;
   right: 0;
   top: 0;
   width: 30%;
-  height: 100%;
 }
 #chattrr_out_infoTable {
   width: 100%;
