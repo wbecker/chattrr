@@ -34,7 +34,7 @@
       express = require("express"),
       db, server, socket, clients, 
       bgsavesInterval, sendRegularInfoInterval,
-      minBoardSize = 2, maxBoardSize = 4, everyoneUrl = "everyone",
+      minBoardSize = 4, maxBoardSize = 15, everyoneUrl = "chattrr.net",
       f = {serverName: "chattrr"};
 
   db = redis.createClient();
@@ -234,7 +234,7 @@
   f.decideUrl = function (client, userToken, message) {
     var urlObj, host, pathname, paths, urlsToCheck, builtUrl;
     urlObj = urlLib.parse(message.url); 
-    host = urlObj.hostname;
+    host = urlObj.protocol + "//" + urlObj.hostname;
     pathname = urlObj.pathname;
     if (pathname.charAt(0) === "/") {
       pathname = pathname.substring(1);
