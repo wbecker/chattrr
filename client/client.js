@@ -21,7 +21,7 @@
 /*global _, window, io */
 (function () {
   var myIp, port, userToken, 
-    messageReceived, connectSendButton, sendButtonConnected = false,
+    sendButtonConnected = false,
     startSockets, socketHolder = {}, retryCount, retryTimeout,
     history = [], historyIndex = 0, 
     lostMessages = {}, messageIndex = 1,
@@ -31,10 +31,8 @@
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
   userToken = window.__userToken;
-  messageReceived = function (messageRaw) { 
-    var message = JSON.parse(messageRaw),
-        topBarText, atBottom,
-        parent, tbody, holder, nameHolder, idHolder, timeHolder, msgHolder;
+  f.messageReceived = function (messageRaw) { 
+    var message = JSON.parse(messageRaw), topBarText;
     if (message.closing) {
       if (socketHolder.socket) {
         socketHolder.socket.disconnect();
@@ -43,7 +41,7 @@
         clearInterval(retryTimeout);
       }
       retryTimeout = setInterval(startSockets, 2000);
-      messageReceived(JSON.stringify({
+      f.messageReceived(JSON.stringify({
         name: "chattrr",
         id: 0,
         time: new Date(),
@@ -56,13 +54,40 @@
       topBarText.textContent = message.count + " Chattrrers lurking";
     }
     if (message.urls) {
-      
+      f.writePopularUrlsToDom(message);  
     }
     if (!message.msg) {
       return;
     }
+    f.writeMessageToDom(message);
+  };
+  f.writePopularUrlsToDom = function (message) {
+    var infoHolder = document.getElementById("chattrr_out_info_tablebody");
+    while (infoHolder.hasChildNodes()) {
+      infoHolder.removeChild(infoHolder.lastChild);
+    }
+    message.urls.forEach(function (urlInfo) {
+      var line, url, users;
+      line = document.createElement("tr");
+      line.className = "chattrr_out_info_line";
+      infoHolder.appendChild(line);
 
-    parent = document.getElementById("chattrr_out");
+      users = document.createElement("td");
+      users.className = "chattrr_out_info_line_users";
+      line.appendChild(users);
+
+      url = document.createElement("td");
+      url.className = "chattrr_out_info_line_url";
+      line.appendChild(url);
+
+      users.textContent = urlInfo[1];
+      url.textContent = urlInfo[0];
+    });
+  };
+  f.writeMessageToDom = function (message) {
+    var atBottom, parent, tbody, holder, nameHolder, idHolder, 
+      timeHolder, msgHolder;
+    parent = document.getElementById("chattrr_out_tableHolder");
     if (!parent) {
       //it's probably been closed
       return;
@@ -100,7 +125,7 @@
       parent.scrollTop = parent.scrollHeight - parent.clientHeight;
     }
   };
-  connectSendButton = function () {
+  f.connectSendButton = function () {
     if (sendButtonConnected) {
       return;
     }
@@ -183,7 +208,7 @@
       lastSetNameTime = now;
     }
     else {
-      messageReceived(JSON.stringify({
+      f.messageReceived(JSON.stringify({
         name: "chattrr",
         id: 0,
         time: new Date(),
@@ -198,7 +223,7 @@
       lastMessageTime = now;
     }
     else {
-      messageReceived(JSON.stringify({
+      f.messageReceived(JSON.stringify({
         name: "chattrr",
         id: 0,
         time: new Date(),
@@ -224,7 +249,7 @@
   };
   startSockets = function () {
     var tryReconnect, socket, connectionLost;
-    messageReceived(JSON.stringify({
+    f.messageReceived(JSON.stringify({
       name: "chattrr",
       id: 0,
       time: new Date(),
@@ -262,7 +287,7 @@
       _(lostMessages).keys().sort().forEach(function (key) {
         socket.send(JSON.stringify(lostMessages[key]));
       });
-      connectSendButton();
+      f.connectSendButton();
     });
     socket.on('disconnect', function () { 
       connectionLost(2);
@@ -271,7 +296,7 @@
       if (socketHolder.socket) {
         delete socketHolder.socket;
       }
-      messageReceived(JSON.stringify({
+      f.messageReceived(JSON.stringify({
         name: "chattrr",
         id: 0,
         time: new Date(),
@@ -280,18 +305,16 @@
       clearInterval(retryTimeout);
       retryTimeout = setInterval(tryReconnect, 2000);
     };
-    socket.on('message', messageReceived);
+    socket.on('message', f.messageReceived);
   };
   (function () {
-    var style, originalScrollTop,
-      bodyStyle, chattrr, topBar, topBarText, out, 
-      tableHolder, table, tableBody, 
-      inputHolder, input, send;
-    style = document.createElement("link");
-    style.rel = "stylesheet";
-    style.type = "text/css";
-    style.href = "http://" + myIp + ":" + port + "/client.css";
-    document.getElementsByTagName("head")[0].appendChild(style);
+    var chattrrStyle, originalScrollTop, bodyStyle, chattrr, topBar, 
+      topBarText; 
+    chattrrStyle = document.createElement("link");
+    chattrrStyle.rel = "stylesheet";
+    chattrrStyle.type = "text/css";
+    chattrrStyle.href = "http://" + myIp + ":" + port + "/client.css";
+    document.getElementsByTagName("head")[0].appendChild(chattrrStyle);
   
     originalScrollTop = document.body.parentNode.scrollTop;
 
@@ -313,47 +336,65 @@
     topBarText.textContent = "Welcome to Chattrr";
     topBar.appendChild(topBarText);
   
-    out = document.createElement("div");
-    out.id = "chattrr_out";
-    chattrr.appendChild(out);
+    (function () {
+      var out, outTableHolder, outTable, outTableBody, 
+      infoTableHolder, infoTable, infoTableBody;
 
-    tableHolder = document.createElement("div");
-    tableHolder.id = "chattrr_tableHolder";
-    out.appendChild(tableHolder);
-    
-    table = document.createElement("table");
-    table.id = "chattrr_out_table";
-    table.cellSpacing = 0;
-    table.cellPadding = 0;
-    tableHolder.appendChild(table);
+      out = document.createElement("div");
+      out.id = "chattrr_out";
+      chattrr.appendChild(out);
 
-    info = document.createElement("div");
-    info.id = "chattr_info";
-    out.appendChild(info);
-    
-    tableBody = document.createElement("tbody");
-    tableBody.id = "chattrr_out_tablebody";
-    table.appendChild(tableBody);
+      outTableHolder = document.createElement("div");
+      outTableHolder.id = "chattrr_out_tableHolder";
+      out.appendChild(outTableHolder);
+      
+      outTable = document.createElement("table");
+      outTable.id = "chattrr_out_table";
+      outTable.cellSpacing = 0;
+      outTable.cellPadding = 0;
+      outTableHolder.appendChild(outTable);
   
-    inputHolder = document.createElement("div");
-    inputHolder.id = "chattrr_inputHolder";
-    chattrr.appendChild(inputHolder);
+      outTableBody = document.createElement("tbody");
+      outTableBody.id = "chattrr_out_tablebody";
+      outTable.appendChild(outTableBody);
+  
+      infoTableHolder = document.createElement("div");
+      infoTableHolder.id = "chattrr_out_infoTableHolder";
+      out.appendChild(infoTableHolder);
 
-    input = document.createElement("input");
-    input.type = "text";
-    input.id = "chattrr_in";
-    inputHolder.appendChild(input);
-    
-    send = document.createElement("input");
-    send.type = "button";
-    send.id = "chattrr_send";
-    send.value = "Send";
-    inputHolder.appendChild(send);
-    
-    originalMarginBottom = bodyStyle.marginBottom;
-    document.body.style.marginBottom += 15 * 15 + "px";
-    
-    input.focus();
+      infoTable = document.createElement("table");
+      infoTable.id = "chattrr_out_infoTable";
+      infoTable.cellSpacing = 0;
+      infoTable.cellPadding = 0;
+      infoTableHolder.appendChild(infoTable);
+  
+      infoTableBody = document.createElement("tbody");
+      infoTableBody.id = "chattrr_out_info_tablebody";
+      infoTable.appendChild(infoTableBody);
+    }());
+  
+    (function () {
+      var inputHolder, input, send;
+      inputHolder = document.createElement("div");
+      inputHolder.id = "chattrr_inputHolder";
+      chattrr.appendChild(inputHolder);
+  
+      input = document.createElement("input");
+      input.type = "text";
+      input.id = "chattrr_in";
+      inputHolder.appendChild(input);
+      
+      send = document.createElement("input");
+      send.type = "button";
+      send.id = "chattrr_send";
+      send.value = "Send";
+      inputHolder.appendChild(send);
+      
+      originalMarginBottom = bodyStyle.marginBottom;
+      document.body.style.marginBottom += 15 * 15 + "px";
+      
+      input.focus();
+    }());
 
     document.body.parentNode.scrollTop = originalScrollTop;
   }());

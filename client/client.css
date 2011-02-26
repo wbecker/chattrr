@@ -29,15 +29,44 @@
   font-size: 0.75em;
 }
 #chattrr_out {
+  position: absolute;
   top: 1em;
   bottom: 2.5em;
-  position: absolute;
-  overflow-y: scroll;
-  overflow-x: hidden;
   width: 100%;
   text-align: left;
   padding: 0;
   margin: 0;
+}
+#chattrr_out_tableHolder {
+  position: absolute;
+  width: 70%;
+  height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+#chattrr_out_infoTableHolder {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 30%;
+  height: 100%;
+}
+#chattrr_out_infoTable {
+  width: 100%;
+}
+.chattrr_out_info_line_users, 
+.chattrr_out_info_line_url {
+  font-size: 0.7em;
+}
+.chattrr_out_info_line_users {
+  padding-left: 0.5em;
+}
+.chattrr_out_info_line_url {
+  white-space: nowrap;
+  padding-left: 0.5em;
+}
+.chattrr_out_info_line:nth-child(odd) {
+  background-color: #eeeeee;
 }
 #chattrr_out_table {
   width: 100%;
@@ -158,6 +187,7 @@
   -webkit-box-shadow: none;
 }
 .chattrr_message *,
+.chattrr_out_info_line *,
 #chattrr_in {
   font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif;
 }
