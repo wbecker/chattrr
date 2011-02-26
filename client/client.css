@@ -177,12 +177,7 @@
   border-style: solid;
   border-color: #BBBBBB;
 }
-#chattrr,
-#chattrr_out,
-.chattrr_message, 
-.chattrr_message *,
-#chattrr_topBar,
-#chattrr_inputHolder {
+.chattrr_message * {
   -moz-border-radius: 0;
   border-radius: 0;
 }
@@ -190,7 +185,11 @@
 #chattrr_out,
 .chattrr_message, 
 #chattrr_topBar,
-#chattrr_inputHolder {
+#chattrr_inputHolder,
+#chattrr_out_tableHolder,
+#chattrr_out_infoTableHolder {
+  -moz-border-radius: 0;
+  border-radius: 0;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
 }
