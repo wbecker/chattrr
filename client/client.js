@@ -308,8 +308,7 @@
     socket.on('message', f.messageReceived);
   };
   (function () {
-    var chattrrStyle, originalScrollTop, bodyStyle, chattrr, topBar, 
-      topBarText; 
+    var chattrrStyle, originalScrollTop, bodyStyle, chattrr; 
     chattrrStyle = document.createElement("link");
     chattrrStyle.rel = "stylesheet";
     chattrrStyle.type = "text/css";
@@ -327,14 +326,22 @@
       chattrr.style.marginLeft = "-" + bodyStyle.marginLeft;
     }
 
-    topBar = document.createElement("div");
-    topBar.id = "chattrr_topBar";
-    chattrr.appendChild(topBar);
+    (function () {
+      var topBar, topBarText, urlsText; 
+      topBar = document.createElement("div");
+      topBar.id = "chattrr_topBar";
+      chattrr.appendChild(topBar);
+  
+      topBarText = document.createElement("span");
+      topBarText.id = "chattrr_topBarText";
+      topBarText.textContent = "Welcome to Chattrr";
+      topBar.appendChild(topBarText);
 
-    topBarText = document.createElement("span");
-    topBarText.id = "chattrr_topBarText";
-    topBarText.textContent = "Welcome to Chattrr";
-    topBar.appendChild(topBarText);
+      urlsText = document.createElement("span");
+      urlsText.id = "chattrr_topBarUrls";
+      urlsText.textContent = "Top chattrrs";
+      topBar.appendChild(urlsText);
+    }());
   
     (function () {
       var out, outTableHolder, outTable, outTableBody, 

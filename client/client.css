@@ -24,9 +24,14 @@
   box-sizing: border-box;
   line-height: 0.7em;
 }
-#chattrr_topBarText {
+#chattrr_topBarText,
+#chattrr_topBarUrls{
   font-family: sans-serif;
   font-size: 0.75em;
+}
+#chattrr_topBarUrls {
+  float: right;
+  padding-right: 2em;
 }
 #chattrr_out {
   position: absolute;
