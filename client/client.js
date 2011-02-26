@@ -176,6 +176,10 @@
         sendText = false;
         f.grabDepth(msg, text.substring(18));
       }
+      else if (text.match(/^\/depth/)) {
+        sendText = false;
+        f.grabDepth(msg, text.substring(7));
+      }
       else {
         f.grabMessage(msg, text);
       }
