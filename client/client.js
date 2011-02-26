@@ -145,6 +145,7 @@
       }
       else if (text.match(/^\/quit/)) {
         f.closeWindow();
+        return;
       }
       else if (text.match(/^set history depth:/)) {
         historyCountText = text.substring(18).trim();
