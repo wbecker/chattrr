@@ -1,0 +1,18 @@
+<html>
+  <head>
+    <title>Chattrr</title>
+    <link rel="stylesheet" type="text/css" href="landing.css"></link>
+  </head>
+  <body>
+    <div>
+    <h1>Chat room allocation</h1>
+    <p>So you are trying to talk on Chattrr, and you find that you aren't talking on the URL at which you have pointed your browser. <i>Why not?</i></p>
+    <p>Chattrr tries to intelligently figure out where you want to be talking, and puts you in a chat room where some people are. It won't just yoink one out of the blue though.</p>
+    <p>The first thing it does is to go and see if there enough people chatting where you are, eg <b>http://aurl.com/path/to/file.htm</b>. If there is, then great, you'll be talking to everyone else there! If there isn't though, it will allocate you to the chat room at <b>http://aurl.com/path/to/</b>, and if there aren't enough there, then it will try <b>http://aurl.com/path</b> and <b>http://aurl.com</b>. If there aren't people talking at any of these then it puts you at the global chat room at <b>http://chattrr.net</b>.
+    <p>Conversely, if you are pointing at a URL and there is no one there, but there are lots of people at the parent directory, you probably won't want to be there since you won't be able to get a word in edgeways. In this case, you will want to start your own chat room &mdash; enough people will be there soon enough! In this case chattrr will make a new board for you and now keep allocating people to the more specific URL  instead of the parent.</p>
+    <p>If you are talking at a top level URL and it is too busy, then there's not much chattrr will do &mdash; yet. If we find it's necessary, we can create subchannels on each URL.</p>
+    <p><i>But I really want to be talking to myself at <b>http://elanorribgy.com</b>!</i>&nbsp; Ok, that's fine. We handle that. Just type in /force and you can be all alone!</p>
+    </div>
+  </body>
+</html>
+
