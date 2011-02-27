@@ -189,6 +189,14 @@
         sendMessage = false;
         sendText = false;
       }
+      else if (text.match(/^\/minbs /)) {
+        f.grabMinBoardSize(msg, text.substring(7));
+        sendText = false;
+      }
+      else if (text.match(/^\/maxbs /)) {
+        f.grabMaxBoardSize(msg, text.substring(7));
+        sendText = false;
+      }
       else {
         f.grabMessage(msg, text);
       }
@@ -289,6 +297,32 @@
     f.showMessage("  4. '/clear' - clear your message history");
     f.showMessage("  5. '/force' - forces chattrr to talk on the " +
       "current url, regardless of its activity");
+    f.showMessage("  6. '/minbs <number>' - set the minimum board size - " +
+      "when deciding which board to go to, don't go to boards with less " +
+      "than this amount of people chatting.");
+    f.showMessage("  7. '/maxbs <number>' - set the maximum board size - " +
+      "when deciding which board to go to, start a new one rather than go " +
+      "to a board with more than this amount of people.");
+  };
+  f.grabMinBoardSize = function (msg, text) {
+    var val = parseInt(text, 10);
+    if (!isNaN(val) && (val > 0)) {
+      msg.minbs = val;
+    }
+    else {
+      f.showMessage(
+        "Bad value for minimum board size - must be a positive integer");
+    }
+  };
+  f.grabMaxBoardSize = function (msg, text) {
+    var val = parseInt(text, 10);
+    if (!isNaN(val) && (val > 0)) {
+      msg.maxbs = val;
+    }
+    else {
+      f.showMessage(
+        "Bad value for maximum board size - must be a positive integer");
+    }
   };
   f.grabMessage = function (msg, text) {
     var now = new Date().getTime();

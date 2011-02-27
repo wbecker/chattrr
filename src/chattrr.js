@@ -278,7 +278,8 @@
     urlsToCheck.push(host + "/" + pathname);
     urlsToCheck = urlsToCheck.reverse();
     (function () {
-      var getHashes, urlIds, addUrl, urlIdAssigner;
+      var getHashes, urlIds, addUrl, urlIdAssigner,
+        minBoardSizeToUse, maxBoardSizeToUse;
       getHashes = db.multi();
       urlIds = [];
       urlIdAssigner = function (err, urlId) {
@@ -287,6 +288,26 @@
       urlsToCheck.forEach(function (url, index) {
         getHashes.get(f.getUrlIdForHashKey(hash.md5(url)), urlIdAssigner);
       });
+      getHashes.get(f.getMinBoardSizeVar(userToken), 
+        function (err, userMinBoardSize) {
+          if (userMinBoardSize) {
+            minBoardSizeToUse = userMinBoardSize;
+          }
+          else {
+            minBoardSizeToUse = minBoardSize;
+          }
+        }
+      );
+      getHashes.get(f.getMaxBoardSizeVar(userToken), 
+        function (err, userMaxBoardSize) {
+          if (userMaxBoardSize) {
+            maxBoardSizeToUse = userMaxBoardSize;
+          }
+          else {
+            maxBoardSizeToUse = maxBoardSize;
+          }
+        }
+      );
       getHashes.exec(function () {
         var getMembers, urlCounts, urlCountAssigner;
         urlCounts = [];
@@ -301,8 +322,8 @@
           var i, ii;
           for (i = 0, ii = urlsToCheck.length - 1; i < ii; i += 1) {
             if (
-               (urlCounts[i] >= minBoardSize) || 
-               (urlCounts[i + 1] > maxBoardSize)
+               (urlCounts[i] >= minBoardSizeToUse) || 
+               (urlCounts[i + 1] > maxBoardSizeToUse)
              ) {
               f.handleDecidedUrl(client, userToken, message, urlsToCheck[i]);
               return;
@@ -357,6 +378,16 @@
     else if (message.forceUrl) {
       //handled elsewhere  
       message.forceUrl = message.forceUrl;
+    }
+    else if (message.minbs) {
+      db.set(f.getMinBoardSizeVar(userToken), message.minbs);
+      f.sendMessage("You now go to boards that have at least " + 
+        message.minbs + " people on them", client, userToken, urlId);
+    }
+    else if (message.maxbs) {
+      db.set(f.getMaxBoardSizeVar(userToken), message.maxbs);
+      f.sendMessage("You now will not go to boards that have at more than " + 
+        message.maxbs + " people on them", client, userToken, urlId);
     }
     else if (message.historyCount && (message.historyCount > 0)) {
       db.set(f.getHistoryDepthVar(userToken), 
@@ -538,6 +569,12 @@
   f.getUserIdVar = function (userToken) {
     return "user:" + userToken + ":id";
   };
+  f.getMinBoardSizeVar = function (userToken) {
+    return "user:" + userToken + ":minbs";
+  };
+  f.getMaxBoardSizeVar = function (userToken) {
+    return "user:" + userToken + ":maxbs";
+  };
   //"user:uniqueId
   f.createAnonIndex = function () {
     return "user:nextAnonId";
@@ -597,8 +634,10 @@
     serverName = c.serverName ? c.serverName : "chattrr";
     serverPort = c.serverPort ? c.serverPort : 80;
     popularCount = c.popularCount ? c.popularCount : 20;
-    logInfoToConsole = f.logInfoToConsole ? c.logInfoToConsole : false;
-    logErrorsToConsole = f.logErrorsToConsole ? f.logErrorsToConsole : true;
+    logInfoToConsole = !_.isUndefined(c.logInfoToConsole) ? 
+      c.logInfoToConsole : false;
+    logErrorsToConsole = !_.isUndefined(c.logErrorsToConsole) ? 
+      c.logErrorsToConsole : true;
     anonymousName = c.anonymousName ? c.anonymousName : "Anonymous_";
     start();
   });
