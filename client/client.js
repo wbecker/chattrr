@@ -160,7 +160,9 @@
         sendText = false;
         f.grabName(msg, text.substring(6));
       }
-      else if (text.match(/^\/quit/)) {
+      else if ((text.match(/^\/quit/)) || 
+               (text.match(/^\/exit/)) || 
+               (text.match(/^\/close/))) {
         f.closeWindow();
         return;
       }
