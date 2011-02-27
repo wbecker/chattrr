@@ -80,6 +80,9 @@
   color: black;
   text-decoration: none;
 }
+.chattrr_out_info_line_urllink:hover {
+  text-decoration: underline;
+}
 .chattrr_out_info_line:nth-child(odd) {
   background-color: #eeeeee;
 }
