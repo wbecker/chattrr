@@ -242,9 +242,15 @@
   f.handleUrl = function (client, userToken, message) {
     if (message.forceUrl) {
       db.get(f.getClientUrlKey(client), function (err, urlId) {
-        db.srem(f.getMembersKey(urlId), client.sessionId, function () {
+        var useUrl = function () {
           f.handleDecidedUrl(client, userToken, message, message.url);
-        });
+        };
+        if (urlId) {
+          db.srem(f.getMembersKey(urlId), client.sessionId, useUrl);
+        }
+        else {
+          useUrl();
+        }
       });
     }
     else if (message.url) {
