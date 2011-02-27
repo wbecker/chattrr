@@ -126,6 +126,9 @@
 .chattrr_message .chattrr_timeHolder {
   color: #555555;
   max-width: 11em;
+  white-space: no-wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .chattrr_message * {
   font-size: inherit;
