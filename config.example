@@ -1,0 +1,13 @@
+{
+  "minBoardSize": 5,
+  "maxBoardSize": 10,
+  "everyoneUrl": "http://chattrr.net",
+  "bgsavesInterval": 300,
+  "sendRegularInfo": 20,
+  "serverName": "chattrr",
+  "serverPort": 80,
+  "popularCount": 20,
+  "logInfoToConsole": false,
+  "logErrorsToConsole": true,
+  "anonymousName": "Anonymous_"
+}

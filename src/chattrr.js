@@ -23,25 +23,20 @@
 (function () {
   var http = require("http"), 
       urlLib = require("url"),
-      io = require("socket.io"),
       fs = require("fs"),
       util = require("util"),
-      redis = require("redis"),
-//      hash = require("../../hashlib/build/default/hashlib"),
-      hash = require("hashlib"),
-      _ = require("underscore"),
-      logs = require("winston"),
-      express = require("express"),
-      db, server, socket, clients, 
-      bgsavesInterval, sendRegularInfoInterval,
-      minBoardSize = 4, maxBoardSize = 10, everyoneUrl = "http://chattrr.net",
-      f = {serverName: "chattrr"};
-
-  db = redis.createClient();
-  bgsavesInterval = setInterval(function () {
+      io, redis, hash, _, logs, express,
+      db, server, socket, clients = {}, 
+      bgsavesInterval, sendRegularInfoInterval, popularCount,
+      bgsavesIntervalObj, sendRegularInfoIntervalObj,
+      logInfoToConsole, logErrorsToConsole,
+      minBoardSize, maxBoardSize, serverPort, everyoneUrl, serverName,
+      anonymousName,
+      start, f = {};
+  f.bgsaves = function () {
     db.bgsave();
-  }, 5 * 60 * 1000);
-  sendRegularInfoInterval = setInterval(function () {
+  };
+  f.sendRegularInfo = function () {
     db.get(f.getNextUrlIdKey(), function (err, maxUrlId) {
       var urlId, membersByUrlId, getUrls, memberAssigner;
       getUrls = db.multi();
@@ -64,7 +59,7 @@
         urlsBySize = _(urlsBySize).sortBy(function (urlId) {
           return -membersByUrlId[urlId].length;
         });
-        urlsBySize = _(urlsBySize).first(20);
+        urlsBySize = _(urlsBySize).first(popularCount);
         urlsBySizeNames = new Array(urlsBySize.length);
         getUrls = db.multi();
         urlsBySize.forEach(function (urlId, index) {
@@ -106,9 +101,8 @@
         });
       });
     });
-  }, 20 * 1000);
-
-  (function () {
+  };
+  f.initLogging = function () {
     var now = new Date(),
         pad = function (x) {
           if (x < 10) {
@@ -127,48 +121,53 @@
         pad(now.getUTCSeconds()) + ".log",
       level: "info"
     });
-    logs.remove(logs.transports.Console);
-    logs.add(logs.transports.Console, {
-      level: "error"
-    });
-    /**/
-  }());
-
-  server = express.createServer();
-  server.configure(function () {
-    server.use(express.staticProvider("client"));
-  });
-  process.on("exit", function () {
-    clearInterval(bgsavesInterval);
-    clearInterval(sendRegularInfoInterval);
-    server.close();
-    _(socket.clients).values().forEach(function (client) {
-      client.send(JSON.stringify({closing: true}));
-    });
-    db.save();
-    logs.info("Database saved. Closing.");
-  });
-  process.on("SIGINT", function () {
-    process.exit();
-  });
-  process.on("uncaughtException", function (err) {
-    logs.error(err);
-  });
-  server.get("/", function (req, res) {
-    var url = req.url;
-    if (url === "/") {
-      url += "client.htm";
-      res.redirect("/client.htm?userToken=" + 
-        hash.md5(Math.random().toString()));
+    if (!logInfoToConsole) {
+      logs.remove(logs.transports.Console);
+      if (logErrorsToConsole) {
+        logs.add(logs.transports.Console, {
+          level: "error"
+        });
+      }
     }
-  });
+  };
+  f.addProcessHandlers = function () {
+    process.on("exit", function () {
+      clearInterval(bgsavesIntervalObj);
+      clearInterval(sendRegularInfoIntervalObj);
+      server.close();
+      _(socket.clients).values().forEach(function (client) {
+        client.send(JSON.stringify({closing: true}));
+      });
+      db.save();
+      logs.info("Database saved. Closing.");
+    });
+    process.on("SIGINT", function () {
+      process.exit();
+    });
+    process.on("uncaughtException", function (err) {
+      logs.error(err);
+    });
+  };
+  f.createServer = function () {
+    server = express.createServer();
+    server.configure(function () {
+      server.use(express.staticProvider("client"));
+    });
+    server.get("/", function (req, res) {
+      var url = req.url;
+      if (url === "/") {
+        url += "client.htm";
+        res.redirect("/client.htm?userToken=" + 
+          hash.md5(Math.random().toString()));
+      }
+    });
 
-  server.listen(8000);
-  socket = io.listen(server, {
-    log: logs.info
-  });
-
-  clients = {};
+    server.listen(serverPort);
+    socket = io.listen(server, {
+      log: logs.info
+    });
+    socket.on("connection", f.createConnection);
+  };
   f.createConnection = function (client) {
     var address = client.connection.address();
     clients[client.sessionId] = client;
@@ -194,7 +193,7 @@
       db.get(f.createNameVar(userToken), function (err, res) {
         if (!res) {
           db.incr(f.createAnonIndex(), function (err, res) {
-            f.setName(userToken, "Anonymous_" + res);
+            f.setName(userToken, anonymousName + res);
             db.set(userIdVar, res);
           });
         }
@@ -315,9 +314,9 @@
     f.sendInitialHistory(client, userToken, urlId);
     client.send(JSON.stringify({url: url}));
     f.sendMessage("Welcome to chattrr! You are talking on " + url, 
-      client, f.serverName, urlId);
+      client, serverName, urlId);
     f.sendMessage(" Type '/help' for more information", 
-      client, f.serverName, urlId);
+      client, serverName, urlId);
     f.handleMessageContents(client, userToken, message, urlId);
   };
   f.handleMessageContents = function (client, userToken, message, urlId) {
@@ -326,7 +325,7 @@
       f.setName(userToken, message.name, function (oldName) {
         var toSend = "\"" + oldName + "\" is now called \"" + 
           message.name + "\"";
-        f.sendMessage(toSend, client, f.serverName, urlId, true);
+        f.sendMessage(toSend, client, serverName, urlId, true);
       });
     }
     else if (message.forceUrl) {
@@ -434,7 +433,7 @@
       }
       cb(JSON.stringify(msgObj));
     };
-    if (userToken === f.serverName) {
+    if (userToken === serverName) {
       formatter(userToken, 0);
     }
     else {
@@ -467,7 +466,6 @@
     multi.del(f.createClientUserTokenVar(client));
     multi.exec();
   };
-  socket.on("connection", f.createConnection);
   f.formatAddress = function (client) {
     var con = client.connection,
         addr = con.address();
@@ -528,4 +526,46 @@
   f.getClientUrlKey = function (client) {
     return "client:" + client.sessionId + ":url";
   };
+
+  //Start up
+  start = function () {
+    f.initLogging();
+    db = redis.createClient();
+    bgsavesIntervalObj = setInterval(f.bgsaves, bgsavesInterval * 1000);
+    sendRegularInfoIntervalObj = setInterval(f.sendRegularInfo, 
+      sendRegularInfoInterval * 1000);
+    f.addProcessHandlers();
+    f.createServer();
+  };
+  fs.readFile("config", function (err, configText) {
+    var c = {};
+    if (configText) {
+      try {
+        c = JSON.parse(configText);
+      }
+      catch (ex) {
+        util.log("Config file misformed");
+        util.log(err);
+      }
+    }
+    io = require(c.socket_io ? c.socket_io : "socket.io");
+    redis = require(c.redis ? c.redis : "redis");
+    hash = require(c.hashlib ? c.hashlib : "hashlib");
+    _ = require(c.underscore ? c.underscore : "underscore");
+    logs = require(c.winston ? c.winston : "winston");
+    express = require(c.express ? c.express : "express");
+    minBoardSize = c.minBoardSize ? c.minBoardSize : 4;
+    maxBoardSize = c.maxBoardSize ? c.maxBoardSize : 10;
+    everyoneUrl = c.everyoneUrl ? c.everyoneUrl : "http://chattrr.net";
+    bgsavesInterval = c.bgsavesInterval ? c.bgsavesInterval : 300;
+    sendRegularInfoInterval = c.sendRegularInfoInterval ? 
+      c.sendRegularInfoInterval : 20;
+    serverName = c.serverName ? c.serverName : "chattrr";
+    serverPort = c.serverPort ? c.serverPort : 80;
+    popularCount = c.popularCount ? c.popularCount : 20;
+    logInfoToConsole = f.logInfoToConsole ? c.logInfoToConsole : false;
+    logErrorsToConsole = f.logErrorsToConsole ? f.logErrorsToConsole : true;
+    anonymousName = c.anonymousName ? c.anonymousName : "Anonymous_";
+    start();
+  });
 }());
