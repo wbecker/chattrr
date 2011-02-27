@@ -21,6 +21,7 @@
 /*global _, window, io */
 (function () {
   var myIp, port, userToken, 
+    haveBeenConnected = false,
     sendButtonConnected = false,
     startSockets, socketHolder = {}, retryCount, retryTimeout,
     history = [], historyIndex = 0, 
@@ -368,6 +369,7 @@
   f.forceUrl = function (msg) {
     msg.forceUrl = true;
     msg.url = f.createUrl();
+    boardUrl = msg.url;
   };
   f.createUrl = function () {
     var loc = document.location;
@@ -402,13 +404,20 @@
         clearInterval(retryTimeout);
       }
       var connectMessage = {};
-      connectMessage.url = f.createUrl();
+      if (haveBeenConnected) {
+        connectMessage.url = boardUrl;
+        connectMessage.forceUrl = true;
+      }
+      else {
+        connectMessage.url = f.createUrl();
+      }
       connectMessage.userToken = userToken;
       socket.send(JSON.stringify(connectMessage));
       _(lostMessages).keys().sort().forEach(function (key) {
         socket.send(JSON.stringify(lostMessages[key]));
       });
       f.connectSendButton();
+      haveBeenConnected = true;
     });
     socket.on("disconnect", function () { 
       connectionLost(2);
