@@ -544,7 +544,7 @@
         c = JSON.parse(configText);
       }
       catch (ex) {
-        util.log("Config file misformed");
+        util.log("Config file malformed");
         util.log(err);
       }
     }
