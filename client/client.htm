@@ -47,10 +47,39 @@
     <p>Chattrr is a new way to talk on the web. Just install the bookmarklet by dragging it to your toolbar then, whenever you go to a website, click it and talk to the other people who are also browsing it.</p>
     <p>Drag this link to your toolbar: <a id="desktopLink">Chattrr</a></p>
     <script>
+      function readCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0;i < ca.length;i++) {
+          var c = ca[i];
+          while (c.charAt(0) === ' ') {
+            c = c.substring(1, c.length);
+          }
+          if (c.indexOf(nameEQ) === 0) {
+            return c.substring(nameEQ.length, c.length);
+          }
+        }
+        return null;
+      }
+
+      var baseUrl = location.protocol + "//" + location.host;
       var paramsJson = "{"+location.search.substring(1).replace(/=/g, ":").replace(/&/g, ",").replace(/([0-9a-zA-Z]+):([0-9a-zA-Z]+)/g, "\"$1\":\"$2\"")+"}";
       var searchParams = JSON.parse(paramsJson);
-      var baseUrl = location.protocol + "//" + location.host;
-      document.getElementById("desktopLink").href='javascript:(function(){var%20script=document.createElement("script");script.src="'+baseUrl+'/client.js";document.body.appendChild(script);window.__chattrrHost="'+window.location.hostname+'";window.__chattrrPort="'+window.location.port+'";window.__userToken="'+searchParams.userToken+'";})();';
+      var userToken = searchParams.userToken;
+      var userTokenFromParams = !!userToken;
+      if (!userToken) {
+        userToken = readCookie("userToken");
+      }
+      if (!userToken) {
+        location.href = baseUrl;
+      }
+      document.getElementById("desktopLink").href='javascript:(function(){var%20script=document.createElement("script");script.src="'+baseUrl+'/client.js";document.body.appendChild(script);window.__chattrrHost="'+window.location.hostname+'";window.__chattrrPort="'+window.location.port+'";window.__userToken="'+userToken+'";})();';
+      if (userTokenFromParams) {
+        var expiry = new Date();
+        expiry.setMinutes(expiry.getMinutes()+5);
+        document.cookie = "userToken="+userToken+"; expires="+expiry.toGMTString()+"; path=/"
+        location.href = location.href.substring(0, location.href.indexOf("?"));
+      }
     </script>
     <p>It's great for blogs that have turned off commenting or websites that you have questions about and want an answer from the herd!</p>
     <p>It's been tested on Firefox and Chromium. It won't work on Internet Explorer!</p>
