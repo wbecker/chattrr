@@ -28,6 +28,7 @@
     lostMessages = {}, messageIndex = 1,
     lastSetNameTime = 0, lastMessageTime = 0,
     originalMarginBottom, closed,
+    titleFlashing = false, titleFlashingTimeout,
     boardUrl = "<loading board name>",
     f = {};
   myIp = window.__chattrrHost;
@@ -139,6 +140,29 @@
     if (atBottom) {
       parent.scrollTop = parent.scrollHeight - parent.clientHeight;
     }
+    titleFlashing = true;
+    f.flashTitle(false);
+  };
+  f.flashTitle = function (flashedOnce) {
+    if (titleFlashing && !titleFlashingTimeout) {
+      titleFlashingTimeout = setTimeout(function () {
+        titleFlashingTimeout = null;
+        document.title = "*!" +
+          (flashedOnce ? document.title.substring(2) : document.title);
+        titleFlashingTimeout = setTimeout(function () {
+          titleFlashingTimeout = null;
+          document.title = "* " + document.title.substring(2);
+          f.flashTitle(true);
+        }, 1000);
+      }, flashedOnce ? 1000 : (10 * 1000));
+    }
+    else if (!titleFlashing) {
+      clearTimeout(titleFlashingTimeout);
+      if ((document.title.substring(0, 2) === "*!") ||
+          (document.title.substring(0, 2) === "* ")) {
+        document.title = document.title.substring(2);
+      }
+    }
   };
   f.connectSendButton = function () {
     if (sendButtonConnected) {
@@ -223,11 +247,15 @@
       el.value = "";
       el.focus();
     };
+    document.body.addEventListener("mousemove", function () {
+      titleFlashing = false;
+    }, false);
     document.getElementById("chattrr_send").addEventListener(
       "click", send, false);
     document.getElementById("chattrr_in").addEventListener("keydown",
       function (event) {
         var el = document.getElementById("chattrr_in");
+        titleFlashing = false;
         if (event.keyCode === 38) {
           //up
           if (historyIndex > 0) {
