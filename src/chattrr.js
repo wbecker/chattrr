@@ -316,7 +316,7 @@
     client.send(JSON.stringify({url: url}));
     f.sendMessage("Welcome to chattrr! You are talking on " + url, 
       client, f.serverName, urlId);
-    f.sendMessage(" Type 'help' for more information", 
+    f.sendMessage(" Type '/help' for more information", 
       client, f.serverName, urlId);
     f.handleMessageContents(client, userToken, message, urlId);
   };
