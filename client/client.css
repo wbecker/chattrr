@@ -142,8 +142,7 @@
 }
 .chattrr_message .chattrr_idHolder {
   font-size: 0.6em;
-  line-height: 2em;
-  vertical-align: bottom;
+  vertical-align: middle;
 }
 .chattrr_message .chattrr_timeHolder {
 }
