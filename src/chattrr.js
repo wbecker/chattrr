@@ -131,22 +131,44 @@
     }
   };
   f.addProcessHandlers = function () {
-    process.on("exit", function () {
-      clearInterval(bgsavesIntervalObj);
-      clearInterval(sendRegularInfoIntervalObj);
-      server.close();
-      _(socket.clients).values().forEach(function (client) {
-        client.send(JSON.stringify({closing: true}));
-      });
-      db.save();
-      logs.info("Database saved. Closing.");
-    });
+    process.on("exit", f.handleExit);
     process.on("SIGINT", function () {
       process.exit();
     });
     process.on("uncaughtException", function (err) {
       logs.error(err);
     });
+  };
+  f.handleExit = function () {
+    logs.info("Shutting down...");
+    clearInterval(bgsavesIntervalObj);
+    clearInterval(sendRegularInfoIntervalObj);
+    if (socket) {
+      _(socket.clients).values().forEach(function (client) {
+        client.send(JSON.stringify({closing: true}));
+      });
+    }
+    (function () {
+      try {
+        server.close();
+        logs.info("Server shutdown cleanly.");
+      }
+      catch (e) {
+        logs.error("Problem closing server");
+        logs.error(e);
+      }
+    }());
+    (function () {
+      try {
+        db.save();
+        logs.info("Database saved.");
+      }
+      catch (e) {
+        logs.error("Problem closing database");
+        logs.error(e);
+      }
+    }());
+    logs.info("Shutdown complete");
   };
   f.createServer = function () {
     server = express.createServer();
@@ -535,7 +557,15 @@
     sendRegularInfoIntervalObj = setInterval(f.sendRegularInfo, 
       sendRegularInfoInterval * 1000);
     f.addProcessHandlers();
-    f.createServer();
+    try {
+      f.createServer();
+    }
+    catch (ex) {
+      logs.error("Couldn't start server - are you using a port to which " +
+        "you do not have permission?. Exiting");
+      logs.error(ex);
+      process.exit(1);
+    }
   };
   fs.readFile("config", function (err, configText) {
     var c = {};
