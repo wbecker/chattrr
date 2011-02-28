@@ -365,12 +365,17 @@
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
-    client.send(JSON.stringify({url: url}));
-    f.sendMessage("Welcome to chattrr! You are talking on " + url, 
-      client, serverName, urlId);
-    f.sendMessage(" Type '/help' for more information", 
-      client, serverName, urlId);
-    f.handleMessageContents(client, userToken, message, urlId);
+    db.get(f.getUserFlashesVar(userToken), function (err, flashes) {
+      client.send(JSON.stringify({
+        url: url,
+        flash: (flashes ? flashes === "true" : true)
+      }));
+      f.sendMessage("Welcome to chattrr! You are talking on " + url, 
+        client, serverName, urlId);
+      f.sendMessage(" Type '/help' for more information", 
+        client, serverName, urlId);
+      f.handleMessageContents(client, userToken, message, urlId);
+    });
   };
   f.handleMessageContents = function (client, userToken, message, urlId) {
     if (message.name) {
@@ -394,6 +399,12 @@
       db.set(f.getMaxBoardSizeVar(userToken), message.maxbs);
       f.sendMessage("You now will not go to boards that have at more than " + 
         message.maxbs + " people on them", client, userToken, urlId);
+    }
+    else if (!_.isUndefined(message.flash)) {
+      db.set(f.getUserFlashesVar(userToken), message.flash === true); 
+      f.sendMessage("You have set title flashing " + 
+        ((message.flash === true) ? "on" : "off"), 
+        client, userToken, urlId);
     }
     else if (message.historyCount && (message.historyCount > 0)) {
       db.set(f.getHistoryDepthVar(userToken), 
@@ -580,6 +591,9 @@
   };
   f.getMaxBoardSizeVar = function (userToken) {
     return "user:" + userToken + ":maxbs";
+  };
+  f.getUserFlashesVar = function (userToken) {
+    return "user:" + userToken + ":flash";
   };
   //"user:uniqueId
   f.createAnonIndex = function () {

@@ -28,7 +28,7 @@
     lostMessages = {}, messageIndex = 1,
     lastSetNameTime = 0, lastMessageTime = 0,
     originalMarginBottom, closed,
-    titleFlashing = false, titleFlashingTimeout,
+    allowFlashing = true, titleFlashing = false, titleFlashingTimeout,
     boardUrl = "<loading board name>",
     f = {};
   myIp = window.__chattrrHost;
@@ -58,6 +58,9 @@
     }
     if (message.url) {
       boardUrl = message.url;
+    }
+    if (message.flash === "true") {
+      allowFlashing = true;
     }
     if (message.count) {
       topBarText = document.getElementById("chattrr_topBarText");
@@ -144,7 +147,7 @@
     f.flashTitle(false);
   };
   f.flashTitle = function (flashedOnce) {
-    if (titleFlashing && !titleFlashingTimeout) {
+    if (allowFlashing && titleFlashing && !titleFlashingTimeout) {
       titleFlashingTimeout = setTimeout(function () {
         titleFlashingTimeout = null;
         document.title = "*!" +
@@ -222,6 +225,10 @@
       }
       else if (text.match(/^\/maxbs /)) {
         f.grabMaxBoardSize(msg, text.substring(7));
+        sendText = false;
+      }
+      else if (text.match(/^\/flash /)) {
+        f.grabFlash(msg, text.substring(7));
         sendText = false;
       }
       else {
@@ -326,12 +333,13 @@
     f.showMessage("  3. '/quit' - closes chattrr, keeping your website " +
       "open");
     f.showMessage("  4. '/clear' - clear your message history");
-    f.showMessage("  5. '/force' - forces chattrr to talk on the " +
+    f.showMessage("  5. '/flash {on,off}' - turn title flashing on or off");
+    f.showMessage("  6. '/force' - forces chattrr to talk on the " +
       "current url, regardless of its activity");
-    f.showMessage("  6. '/minbs <number>' - set the minimum board size - " +
+    f.showMessage("  7. '/minbs <number>' - set the minimum board size - " +
       "when deciding which board to go to, don't go to boards with less " +
       "than this amount of people chatting.");
-    f.showMessage("  7. '/maxbs <number>' - set the maximum board size - " +
+    f.showMessage("  8. '/maxbs <number>' - set the maximum board size - " +
       "when deciding which board to go to, start a new one rather than go " +
       "to a board with more than this amount of people.");
   };
@@ -353,6 +361,19 @@
     else {
       f.showMessage(
         "Bad value for maximum board size - must be a positive integer");
+    }
+  };
+  f.grabFlash = function (msg, text) {
+    if (text === "on") {
+      msg.flash = true;
+      allowFlashing = true;
+    }
+    else if (text === "off") {
+      msg.flash = false;
+      allowFlashing = false;
+    }
+    else {
+      f.showMessage("Bad value for flash - useage: '/flash on'or '/flash off'");
     }
   };
   f.grabMessage = function (msg, text) {
