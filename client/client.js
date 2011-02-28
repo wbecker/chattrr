@@ -18,7 +18,7 @@
 */
 
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, browser: true, maxerr: 5, maxlen: 80, indent: 2 */
-/*global _, window, io */
+/*global _, window, io, linkify */
 (function () {
   var myIp, port, userToken, 
     haveBeenConnected = false,
@@ -128,7 +128,7 @@
     nameHolder.textContent = message.name;
     idHolder.textContent = message.id;
     timeHolder.textContent = new Date(message.time).toLocaleTimeString();
-    msgHolder.textContent = message.msg;
+    f.assignMessage(msgHolder, message.msg);
     holder.className = "chattrr_message";
 
     atBottom = (parent.scrollHeight - parent.clientHeight) <
@@ -145,6 +145,21 @@
     }
     titleFlashing = true;
     f.flashTitle(false);
+  };
+  f.assignMessage = function (msgHolder, msg) {
+    linkify(msg, {callback: function (text, href) {
+      var el;
+      if (href) {
+        el = document.createElement("a");
+        el.href = href;
+        el.textContent = text;
+      }
+      else {
+        el = document.createElement("span");
+        el.textContent = text;
+      }
+      msgHolder.appendChild(el);
+    }});
   };
   f.flashTitle = function (flashedOnce) {
     if (allowFlashing && titleFlashing && !titleFlashingTimeout) {
@@ -597,9 +612,12 @@
   }());
 
   (function () {
-    var script, ensureLoaded, underscoreLoaded = false, socketsLoaded = false;
+    var script, ensureLoaded, 
+      underscoreLoaded = false, 
+      linkifyLoaded = false, 
+      socketsLoaded = false;
     ensureLoaded = function () {
-      if (underscoreLoaded && socketsLoaded) {
+      if (linkifyLoaded && underscoreLoaded && socketsLoaded) {
         closed = false;
         startSockets();
       }
@@ -609,6 +627,15 @@
       "raw/master/underscore-min.js";
     script.onload = function () {
       underscoreLoaded = true;
+      ensureLoaded();
+    };
+    document.body.appendChild(script);
+
+    script = document.createElement("script");
+    script.src = "https://github.com/cowboy/javascript-linkify/" +
+      "raw/master/ba-linkify.js";
+    script.onload = function () {
+      linkifyLoaded = true;
       ensureLoaded();
     };
     document.body.appendChild(script);
