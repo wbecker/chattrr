@@ -195,6 +195,9 @@
           seq,
           sendText = true,
           sendMessage = true;
+      if (text.trim().length === 0) {
+        return;
+      }
       if (text.match(/^set name:/)) {
         sendText = false;
         f.grabName(msg, text.substring(9));
