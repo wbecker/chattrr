@@ -507,11 +507,21 @@
     }
 
     (function () {
-      var topBar, topBarText, urlsText; 
+      var topBar, logoText, logoTextLink, topBarText, urlsText; 
       topBar = document.createElement("div");
       topBar.id = "chattrr_topBar";
       chattrr.appendChild(topBar);
   
+      logoText = document.createElement("span");
+      logoText.id = "chattrr_logo";
+      topBar.appendChild(logoText);
+
+      logoTextLink = document.createElement("a");
+      logoTextLink.id = "chattrr_logolink";
+      logoTextLink.href = "http://chattrr.net";
+      logoTextLink.textContent = "Chattrr";
+      logoText.appendChild(logoTextLink);
+
       topBarText = document.createElement("span");
       topBarText.id = "chattrr_topBarText";
       topBarText.textContent = "Welcome to Chattrr";
