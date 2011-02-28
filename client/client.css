@@ -156,8 +156,18 @@
 .chattrr_message .chattrr_timeHolder {
 }
 .chattrr_message .chattrr_msgHolder {
-  color: #000000;
   width: 100%;
+}
+.chattrr_message .chattrr_msgHolder, 
+.chattrr_message .chattrr_msgHolder a, 
+.chattrr_message .chattrr_msgHolder a:visited {
+  color: #000000;
+}
+.chattrr_message .chattrr_msgHolder a {
+  white-space: nowrap;
+}
+.chattrr_message .chattrr_msgHolder a:hover {
+  text-decoration: underline;
 }
 #chattrr_inputHolder {
   position: absolute;
