@@ -35,13 +35,17 @@
       if (!userToken) {
         location.href = baseUrl;
       }
-      document.getElementById("desktopLink").href='javascript:(function(){var%20script=document.createElement("script");script.src="'+baseUrl+'/client.js";document.body.appendChild(script);window.__chattrrHost="'+window.location.hostname+'";window.__chattrrPort="'+window.location.port+'";window.__userToken="'+userToken+'";})();';
       if (userTokenFromParams) {
         var expiry = new Date();
         expiry.setMinutes(expiry.getMinutes()+5);
-        document.cookie = "userToken="+userToken+"; expires="+expiry.toGMTString()+"; path=/"
-        location.href = location.href.substring(0, location.href.indexOf("?"));
+        document.cookie = "userToken=" + userToken + "; expires=" + 
+          expiry.toGMTString() + "; path=/"
+        if (document.cookie) {
+          location.href = 
+            location.href.substring(0, location.href.indexOf("?"));
+        }
       }
+      document.getElementById("desktopLink").href='javascript:(function(){var%20script=document.createElement("script");script.src="'+baseUrl+'/client.js";document.body.appendChild(script);window.__chattrrHost="'+window.location.hostname+'";window.__chattrrPort="'+window.location.port+'";window.__userToken="'+userToken+'";})();';
     </script>
     <p>It's great for blogs that have turned off commenting, chatting while watching live TV, or websites that you have questions about and want an answer from the herd!</p>
     <p>It's been tested on Firefox and Chromium. It won't work on Internet Explorer!</p>
