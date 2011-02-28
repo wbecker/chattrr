@@ -165,6 +165,7 @@
 }
 .chattrr_message .chattrr_msgHolder a {
   white-space: nowrap;
+  text-decoration: none;
 }
 .chattrr_message .chattrr_msgHolder a:hover {
   text-decoration: underline;
