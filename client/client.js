@@ -393,13 +393,13 @@
   };
   f.grabMessage = function (msg, text) {
     var now = new Date().getTime();
-    if (now - lastMessageTime > 1000) {
+    if (now - lastMessageTime > 600) {
       msg.msg = text.substring(0, 200);
       lastMessageTime = now;
     }
     else {
       f.showMessage(
-        "You can't send more than 1 message every second. Calm down!");
+        "You can't send more than 2 messages every second. Calm down!");
     }
   };
   f.closeWindow = function () {
