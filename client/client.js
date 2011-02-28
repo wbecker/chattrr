@@ -152,6 +152,7 @@
       if (href) {
         el = document.createElement("a");
         el.href = href;
+        el.target = "_blank";
         el.textContent = text;
       }
       else {
