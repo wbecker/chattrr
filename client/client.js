@@ -538,6 +538,7 @@
       logoTextLink = document.createElement("a");
       logoTextLink.id = "chattrr_logolink";
       logoTextLink.href = "http://chattrr.net";
+      logTextLink.target = "_blank";
       logoTextLink.textContent = "Chattrr";
       logoText.appendChild(logoTextLink);
 
