@@ -33,6 +33,8 @@
 #chattrr_logo {
   padding-right: 1em;
 }
+#chattrr_topBarText a,
+#chattrr_topBarText a:visited,
 #chattrr_logolink,
 #chattrr_logolink:visited {
   color: #000000;

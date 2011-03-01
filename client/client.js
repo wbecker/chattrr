@@ -43,7 +43,7 @@
     }));
   };
   f.messageReceived = function (messageRaw) { 
-    var message = JSON.parse(messageRaw), topBarText;
+    var message = JSON.parse(messageRaw);
     if (message.closing) {
       if (socketHolder.socket) {
         socketHolder.socket.disconnect();
@@ -63,9 +63,7 @@
       allowFlashing = true;
     }
     if (message.count) {
-      topBarText = document.getElementById("chattrr_topBarText");
-      topBarText.textContent = message.count + " Chattrrers lurking on " + 
-        boardUrl;
+      f.showLurkers(message);
     }
     if (message.urls) {
       f.writePopularUrlsToDom(message);  
@@ -74,6 +72,23 @@
       return;
     }
     f.writeMessageToDom(message);
+  };
+  f.showLurkers = function (message) {
+    var text, link, topBarText;
+    topBarText = document.getElementById("chattrr_topBarText");
+    while (topBarText.hasChildNodes()) {
+      topBarText.removeChild(topBarText.lastChild);
+    }
+    text = document.createElement("span");
+    text.textContent = message.count + " Chattrrers lurking on ";
+
+    link = document.createElement("a");
+    link.textContent = boardUrl;
+    link.href = boardUrl;
+    link.target = "_blank";
+
+    topBarText.appendChild(text);
+    topBarText.appendChild(link);
   };
   f.writePopularUrlsToDom = function (message) {
     var infoHolder = document.getElementById("chattrr_out_info_tablebody");
@@ -538,7 +553,7 @@
       logoTextLink = document.createElement("a");
       logoTextLink.id = "chattrr_logolink";
       logoTextLink.href = "http://chattrr.net";
-      logTextLink.target = "_blank";
+      logoTextLink.target = "_blank";
       logoTextLink.textContent = "Chattrr";
       logoText.appendChild(logoTextLink);
 
