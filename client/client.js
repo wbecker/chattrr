@@ -168,14 +168,46 @@
         el = document.createElement("a");
         el.href = href;
         el.target = "_blank";
-        el.textContent = text;
+        el.textContent = f.processLinkText(text);
+        el.title = text;
       }
       else {
         el = document.createElement("span");
-        el.textContent = text;
+        el.textContent = text = f.processMessageText(text);
       }
       msgHolder.appendChild(el);
     }});
+  };
+  f.processLinkText = function (rawText) {
+    var text;
+    if (rawText.length > 30) {
+      text = rawText.substring(0, 15) + "\u2026" + 
+        rawText.substring(rawText.length - 15);
+    }
+    else {
+      text = rawText;
+    }
+    return text;
+  };
+  f.processMessageText = function (rawText) {
+    var text;
+    text = rawText.split(' ').map().join(' ');
+    return text;
+  };
+  f.processMessageWord = function (word) {
+    var res = "";
+    while (word.length > 10) {
+      if (word.length > 20) {
+        res += word.substring(0, 10) + "\u200B";
+        word = word.substring(10);
+      }
+      else {
+        res += word;
+        word = "";
+      }
+    }
+    res += word;
+    return res;
   };
   f.flashTitle = function (flashedOnce) {
     if (allowFlashing && titleFlashing && !titleFlashingTimeout) {
