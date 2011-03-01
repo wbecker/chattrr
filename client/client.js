@@ -191,7 +191,7 @@
   };
   f.processMessageText = function (rawText) {
     var text;
-    text = rawText.split(' ').map().join(' ');
+    text = rawText.split(' ').map(f.processMessageWord).join(' ');
     return text;
   };
   f.processMessageWord = function (word) {
