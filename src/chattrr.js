@@ -231,13 +231,38 @@
           });
         }
       });
-      f.handleUrl(client, userToken, message);
+      f.handlePassword(client, userToken, message);
     }
     else {
       db.get(clientUserTokenVar, function (err, userToken) {
-        f.handleUrl(client, userToken, message);
+        f.handlePassword(client, userToken, message);
       });
     }
+  };
+  f.handlePassword = function (client, userToken, message) {
+    var clientPasswordSetVar, needsPassword, password, multi;
+    clientPasswordSetVar = f.getClientPasswordSetKey(client);
+    multi = db.multi();
+    db.get(f.getUserPasswordVar(userToken), function (err, dbPassword) {
+      needsPassword = !!dbPassword;
+      password = dbPassword;
+    });
+    db.get(clientPasswordSetVar, function (err, isSet) {
+      if (needsPassword && !isSet) {
+        if (message.password === password) {
+          db.set(clientPasswordSetVar, true);
+          f.handleUrl(client, userToken, message);
+        }
+        else {
+          f.sendMessage(JSON.stringify({passwordFailed: true}),
+            client, serverName);
+        }
+      }
+      else {
+        f.handleUrl(client, userToken, message);
+      }
+    });
+    multi.exec();
   };
   f.handleUrl = function (client, userToken, message) {
     if (message.forceUrl) {
@@ -361,7 +386,7 @@
   };
   
   f.handleNewUrl = function (client, userToken, message, urlId, url) {
-    var userId, multi, clientUrlKey = f.getClientUrlKey(client);
+    var userId, hasPass, multi, clientUrlKey = f.getClientUrlKey(client);
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
@@ -397,6 +422,9 @@
       //handled elsewhere  
       message.forceUrl = message.forceUrl;
     }
+    else if (message.newPassword) {
+      f.setPassword(client, userToken, message, urlId);
+    }
     else if (message.minbs) {
       db.set(f.getMinBoardSizeVar(userToken), message.minbs);
       f.sendMessage("You now go to boards that have at least " + 
@@ -427,6 +455,21 @@
       f.sendMessage(message.msg, client, userToken, urlId, true, 
         message.seq);
     }
+  };
+  f.setPassword = function (client, userToken, message, urlId) {
+    db.get(f.getUserPasswordVar(userToken), function (err, password) {
+      var passwordExists = !!password;
+      if (!passwordExists || (password === message.password)) {
+        db.set(f.getUserPasswordVar(userToken), message.newPassword);
+        f.sendMessage("Your password has now been set. You will be prompted " +
+          "for this when you now start chattrr.", client, userToken, urlId);
+      }
+      else {
+        f.sendMessage("Your old password did not match your existing " +
+          "password. Your new password has not been set.", client, 
+          userToken, urlId);
+      }
+    });
   };
   f.sendInitialHistory = function (client, userToken, urlId) {
     var send = function (message) {
@@ -545,6 +588,7 @@
     });
     multi.del(clientUrlKey);
     multi.del(f.createClientUserTokenVar(client));
+    multi.del(f.getClientPasswordSetKey(client));
     multi.exec();
   };
   f.formatAddress = function (client) {
@@ -593,6 +637,9 @@
   f.getUserIdVar = function (userToken) {
     return "user:" + userToken + ":id";
   };
+  f.getUserPasswordVar = function (userToken) {
+    return "user:" + userToken + ":password";
+  };
   f.getMinBoardSizeVar = function (userToken) {
     return "user:" + userToken + ":minbs";
   };
@@ -615,6 +662,9 @@
   //  the url that the given client is viewing
   f.getClientUrlKey = function (client) {
     return "client:" + client.sessionId + ":url";
+  };
+  f.getClientPasswordSetKey = function (client) {
+    return "client:" + client.sessionId + ":pwset";
   };
 
   //Start up
