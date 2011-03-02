@@ -180,6 +180,12 @@
   border-width: 0.25em;
   padding: 0;
 }
+#chattrr_inputArea {
+  width: 100%;
+  padding-right: 4.5em;
+  -moz-box-sizing: padding-box; 
+  position: absolute;
+}
 #chattrr_in {
   width: 100%;
   padding: 0;
@@ -203,6 +209,7 @@
   font: 200 1em/1.2 Impact,"League Gothic",Haettenschweiler,sans-serif;
   -moz-border-radius: 0;
   background-image: none;
+  width: 2em;
 } 
 #chattrr_in, #chattrr_send {
   font-size: inherit;
@@ -232,4 +239,31 @@
 .chattrr_out_info_line *,
 #chattrr_in {
   font-family: "minion-pro-1","minion-pro-2",Palatino,Georgia,"Times New Roman",serif;
+}
+
+.chattrr_passwordHolder {
+  float: left;
+  width: 33%;
+  height: 100%;
+}
+.chattrr_passwordHolder span,
+.chattrr_passwordHolder input {
+  position: absolute;
+}
+.chattrr_passwordHolder span { 
+  line-height: 2em;
+  text-align: center;
+  width: 33%;
+}
+.chattrr_passwordHolder input {
+  background-color: transparent;
+  width: 33%;
+  border-width: 0;
+  border-left-width: 0.25em;
+  border-style: solid;
+  border-color: #BBBBBB;
+  height: 100%;
+}
+.chattrr_passwordHolder:first {
+  border-left-width: 0;
 }

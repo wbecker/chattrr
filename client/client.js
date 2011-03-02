@@ -310,6 +310,10 @@
         f.grabFlash(msg, text.substring(7));
         sendText = false;
       }
+      else if (text.match(/^\/password/)) {
+        f.setPassword();
+        return;
+      }
       else {
         f.grabMessage(msg, text);
       }
@@ -454,6 +458,37 @@
     else {
       f.showMessage("Bad value for flash - useage: '/flash on'or '/flash off'");
     }
+  };
+  f.setPassword = function () {
+    var createPass, firstPass;
+
+    document.getElementById("chattrr_in").style.display = "none";
+
+    createPass = function (id, text) {
+      var passwordHolder, textHolder, field;
+
+      passwordHolder = document.createElement("div");
+      passwordHolder.className = "chattrr_passwordHolder";
+      document.getElementById("chattrr_inputHolder")
+        .appendChild(passwordHolder);
+
+      textHolder = document.createElement("span");
+      textHolder.textContent = text;
+      passwordHolder.appendChild(textHolder);
+
+      field = document.createElement("input");
+      field.type = "password";
+      field.id = id;
+      passwordHolder.appendChild(field);
+
+      return field;
+    };
+
+    firstPass = createPass("chattrr_oldPass", "Old password");
+    createPass("chattrr_newPass1", "New password");
+    createPass("chattrr_newPass2", "Verify new password");
+
+    firstPass.focus();
   };
   f.grabMessage = function (msg, text) {
     var now = new Date().getTime();
@@ -651,15 +686,19 @@
     }());
   
     (function () {
-      var inputHolder, input, send;
+      var inputHolder, inputArea, input, send;
       inputHolder = document.createElement("div");
       inputHolder.id = "chattrr_inputHolder";
       chattrr.appendChild(inputHolder);
+
+      inputArea = document.createElement("div");
+      inputArea.id = "chattrr_inputArea";
+      inputHolder.appendChild(inputArea);
   
       input = document.createElement("input");
       input.type = "text";
       input.id = "chattrr_in";
-      inputHolder.appendChild(input);
+      inputArea.appendChild(input);
       
       send = document.createElement("input");
       send.type = "button";
