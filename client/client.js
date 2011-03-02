@@ -39,7 +39,7 @@
     f.messageReceived(JSON.stringify({
       name: "chattrr",
       id: 0,
-      time: new Date(),
+      time: new Date().getTime(),
       msg: text
     }));
   };

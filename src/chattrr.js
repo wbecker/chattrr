@@ -505,7 +505,7 @@
     var multi, name, formatter = function (name, id) {
       var msgObj = {
         name: name, 
-        time: time, 
+        time: time.getTime(), 
         msg: message,
         id: id
       };
