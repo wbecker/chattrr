@@ -30,6 +30,7 @@
     originalMarginBottom, closed,
     allowFlashing = true, titleFlashing = false, titleFlashingTimeout,
     boardUrl = "<loading board name>",
+    userId, justStarted = true, justStartedTimeout,
     f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
@@ -58,6 +59,16 @@
     }
     if (message.url) {
       boardUrl = message.url;
+    }
+    if (message.userId) {
+      userId = message.userId;
+      justStarted = true;
+      if (justStartedTimeout) {
+        clearTimeout(justStartedTimeout);
+      }
+      justStartedTimeout = setTimeout(function () {
+        justStarted = false;
+      }, 5000);
     }
     if (message.flash === "true") {
       allowFlashing = true;
@@ -158,8 +169,10 @@
     if (atBottom) {
       parent.scrollTop = parent.scrollHeight - parent.clientHeight;
     }
-    titleFlashing = true;
-    f.flashTitle(false);
+    if (!justStarted && (message.id !== 0) && (message.id !== userId)) {
+      titleFlashing = true;
+      f.flashTitle(false);
+    }
   };
   f.assignMessage = function (msgHolder, msg) {
     linkify(msg, {callback: function (text, href) {

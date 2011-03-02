@@ -361,14 +361,20 @@
   };
   
   f.handleNewUrl = function (client, userToken, message, urlId, url) {
-    var clientUrlKey = f.getClientUrlKey(client);
+    var userId, multi, clientUrlKey = f.getClientUrlKey(client);
     db.sadd(f.getMembersKey(urlId), client.sessionId);
     db.set(clientUrlKey, urlId);
     f.sendInitialHistory(client, userToken, urlId);
-    db.get(f.getUserFlashesVar(userToken), function (err, flashes) {
+
+    multi = db.multi();
+    multi.get(f.getUserIdVar(userToken), function (err, res) {
+      userId = res;
+    });
+    multi.get(f.getUserFlashesVar(userToken), function (err, flashes) {
       client.send(JSON.stringify({
         url: url,
-        flash: (flashes ? flashes === "true" : true)
+        flash: (flashes ? flashes === "true" : true),
+        userId: userId
       }));
       f.sendMessage("Welcome to chattrr! You are talking on " + url, 
         client, serverName, urlId);
@@ -376,6 +382,7 @@
         client, serverName, urlId);
       f.handleMessageContents(client, userToken, message, urlId);
     });
+    multi.exec();
   };
   f.handleMessageContents = function (client, userToken, message, urlId) {
     if (message.name) {
