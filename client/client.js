@@ -31,6 +31,7 @@
     allowFlashing = true, titleFlashing = false, titleFlashingTimeout,
     boardUrl = "<loading board name>",
     userId, justStarted = true, justStartedTimeout,
+    passwordMode = false,
     f = {};
   myIp = window.__chattrrHost;
   port = window.__chattrrPort ? parseInt(window.__chattrrPort, 10) : 80;
@@ -312,6 +313,7 @@
       }
       else if (text.match(/^\/password/)) {
         f.setPassword();
+        el.value = "";
         return;
       }
       else {
@@ -460,36 +462,55 @@
     }
   };
   f.setPassword = function () {
-    var createPass, firstPass;
+    var oldPass, newPass1, newPass2, messageField;
 
-    document.getElementById("chattrr_in").style.display = "none";
+    messageField = document.getElementById("chattrr_in");
+    messageField.style.display = "none";
 
-    createPass = function (id, text) {
-      var passwordHolder, textHolder, field;
+    oldPass = f.createPasswordField("chattrr_oldPass", "Old password");
+    newPass1 = f.createPasswordField("chattrr_newPass1", "New password");
+    newPass2 = f.createPasswordField("chattrr_newPass2", "Verify new password");
 
-      passwordHolder = document.createElement("div");
-      passwordHolder.className = "chattrr_passwordHolder";
-      document.getElementById("chattrr_inputHolder")
-        .appendChild(passwordHolder);
+    newPass2[1].addEventListener("keyup", function (event) {
+      if (event.which === 13) {
+        var parent = document.getElementById("chattrr_inputHolder");
+        parent.removeChild(oldPass[0]);
+        parent.removeChild(newPass1[0]);
+        parent.removeChild(newPass2[0]);
+        messageField.style.display = "";
+        messageField.focus();
+      }
+    }, false);
 
-      textHolder = document.createElement("span");
-      textHolder.textContent = text;
-      passwordHolder.appendChild(textHolder);
-
-      field = document.createElement("input");
-      field.type = "password";
-      field.id = id;
-      passwordHolder.appendChild(field);
-
-      return field;
-    };
-
-    firstPass = createPass("chattrr_oldPass", "Old password");
-    createPass("chattrr_newPass1", "New password");
-    createPass("chattrr_newPass2", "Verify new password");
-
-    firstPass.focus();
+    passwordMode = true;
+    oldPass[1].focus();
   };
+  f.createPasswordField = function (id, text) {
+    var passwordHolder, textHolder, field, keyListener;
+
+    passwordHolder = document.createElement("div");
+    passwordHolder.className = "chattrr_passwordHolder";
+    document.getElementById("chattrr_inputHolder").appendChild(passwordHolder);
+
+    textHolder = document.createElement("span");
+    textHolder.textContent = text;
+    passwordHolder.appendChild(textHolder);
+
+    field = document.createElement("input");
+    field.type = "password";
+    field.id = id;
+
+    keyListener = function () {
+      textHolder.style.display = (field.value.length > 0) ? "none" : "";
+    };
+    field.addEventListener("keypress", keyListener, false);
+    field.addEventListener("keyup", keyListener, false);
+    passwordHolder.appendChild(field);
+
+    return [passwordHolder, field];
+  };
+
+
   f.grabMessage = function (msg, text) {
     var now = new Date().getTime();
     if (now - lastMessageTime > 600) {
