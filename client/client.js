@@ -23,6 +23,7 @@
   var myIp, port, userToken, 
     haveBeenConnected = false,
     sendButtonConnected = false,
+    currentPassword, justSetPasswordUsingExisting = false,
     startSockets, socketHolder = {}, retryCount, retryTimeout,
     history = [], historyIndex = 0, 
     lostMessages = {}, messageIndex = 1,
@@ -60,9 +61,16 @@
       return;
     }
     if (message.passwordFailed) {
-      f.promptForPassword();
+      if (currentPassword && !justSetPasswordUsingExisting) {
+        f.sendConnectMessage(currentPassword);
+        justSetPasswordUsingExisting = true;
+      }
+      else {
+        f.promptForPassword();
+      }
       return;
     }
+    justSetPasswordUsingExisting = false;
     if (message.url) {
       boardUrl = message.url;
     }
@@ -107,7 +115,8 @@
         parent.removeChild(field);
         messageField.style.display = "";
         if (socketHolder.socket && socketHolder.socket.connected) {
-          f.sendConnectMessage(Crypto.SHA256(field.value));
+          currentPassword = Crypto.SHA256(field.value);
+          f.sendConnectMessage(currentPassword);
         }
         else {
           f.showMessage("Cannot send password while unconnected to chattrr.");
