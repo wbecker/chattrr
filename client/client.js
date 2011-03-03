@@ -18,7 +18,7 @@
 */
 
 /*jslint white: true, onevar: true, undef: true, newcap: true, nomen: false, regexp: true, plusplus: true, bitwise: true, browser: true, maxerr: 5, maxlen: 80, indent: 2 */
-/*global _, window, io, linkify */
+/*global _, window, io, linkify, Crypto */
 (function () {
   var myIp, port, userToken, 
     haveBeenConnected = false,
@@ -107,7 +107,7 @@
         parent.removeChild(field);
         messageField.style.display = "";
         if (socketHolder.socket && socketHolder.socket.connected) {
-          f.sendConnectMessage(field.value);
+          f.sendConnectMessage(Crypto.SHA256(field.value));
         }
         else {
           f.showMessage("Cannot send password while unconnected to chattrr.");
@@ -518,8 +518,10 @@
         if (newPass1[1].value === newPass2[1].value) {
           if (socketHolder.socket && socketHolder.socket.connected) {
             socketHolder.socket.send(JSON.stringify({
-              password: oldPass[1].value,
-              newPassword: newPass1[1].value
+              password: (oldPass[1].value === "") ? "" :
+                Crypto.SHA256(oldPass[1].value),
+              newPassword: (newPass1[1].value === "") ? "" : 
+                Crypto.SHA256(newPass1[1].value)
             }));
           }
           else {
@@ -560,7 +562,6 @@
 
     return [passwordHolder, field];
   };
-
 
   f.grabMessage = function (msg, text) {
     var now = new Date().getTime();
@@ -799,9 +800,10 @@
     var script, ensureLoaded, 
       underscoreLoaded = false, 
       linkifyLoaded = false, 
+      hashLoaded = false,
       socketsLoaded = false;
     ensureLoaded = function () {
-      if (linkifyLoaded && underscoreLoaded && socketsLoaded) {
+      if (linkifyLoaded && underscoreLoaded && hashLoaded && socketsLoaded) {
         closed = false;
         startSockets();
       }
@@ -820,6 +822,14 @@
       "raw/master/ba-linkify.js";
     script.onload = function () {
       linkifyLoaded = true;
+      ensureLoaded();
+    };
+    document.body.appendChild(script);
+
+    script = document.createElement("script");
+    script.src = "http://crypto-js.googlecode.com/files/2.0.0-crypto-sha256.js";
+    script.onload = function () {
+      hashLoaded = true;
       ensureLoaded();
     };
     document.body.appendChild(script);
