@@ -29,7 +29,8 @@
     lastSetNameTime = 0, lastMessageTime = 0,
     originalMarginBottom, closed,
     allowFlashing = true, titleFlashing = false, titleFlashingTimeout,
-    boardUrl = "<loading board name>",
+    defaultBoardUrlText = "<loading board name>", 
+    boardUrl = defaultBoardUrlText,
     userId, justStarted = true, justStartedTimeout,
     passwordMode = false,
     f = {};
@@ -56,6 +57,10 @@
       retryTimeout = setInterval(startSockets, 2000);
       f.showMessage(
         "Server shutting down. We'll listen for it to come back again.");
+      return;
+    }
+    if (message.passwordFailed) {
+      f.promptForPassword();
       return;
     }
     if (message.url) {
@@ -85,6 +90,34 @@
     }
     f.writeMessageToDom(message);
   };
+  f.promptForPassword = function () {
+    var messageField, parent, field;
+    f.showMessage("Please enter your password");
+    messageField = document.getElementById("chattrr_in");
+    messageField.style.display = "none";
+    
+    parent = document.getElementById("chattrr_inputHolder");
+    field = document.createElement("input");
+    field.type = "password";
+    field.id = "chattrr_in_password";
+    parent.appendChild(field);
+    //TODO: disconnect the send button
+    field.addEventListener("keypress", function (event) {
+      if (event.which === 13) {
+        parent.removeChild(field);
+        messageField.style.display = "";
+        if (socketHolder.socket && socketHolder.socket.connected) {
+          f.sendConnectMessage(field.value);
+        }
+        else {
+          f.showMessage("Cannot send password while unconnected to chattrr.");
+        }
+        messageField.focus();
+      }
+    }, false);
+    field.focus();
+  };
+
   f.showLurkers = function (message) {
     var text, link, topBarText;
     topBarText = document.getElementById("chattrr_topBarText");
@@ -314,6 +347,9 @@
       else if (text.match(/^\/password/)) {
         f.setPassword();
         el.value = "";
+        msg.msg = text;
+        history.push(msg);
+        historyIndex = history.length;
         return;
       }
       else {
@@ -478,6 +514,21 @@
         parent.removeChild(newPass1[0]);
         parent.removeChild(newPass2[0]);
         messageField.style.display = "";
+        
+        if (newPass1[1].value === newPass2[1].value) {
+          if (socketHolder.socket && socketHolder.socket.connected) {
+            socketHolder.socket.send(JSON.stringify({
+              password: oldPass[1].value,
+              newPassword: newPass1[1].value
+            }));
+          }
+          else {
+            f.showMessage("Cannot set password while unconnected to chattrr.");
+          }
+        }
+        else {
+          f.showMessage("Passwords do not match");
+        }
         messageField.focus();
       }
     }, false);
@@ -589,19 +640,7 @@
       if (retryTimeout) {
         clearInterval(retryTimeout);
       }
-      var connectMessage = {};
-      if (haveBeenConnected) {
-        connectMessage.url = boardUrl;
-        connectMessage.forceUrl = true;
-      }
-      else {
-        connectMessage.url = f.createUrl();
-      }
-      connectMessage.userToken = userToken;
-      socket.send(JSON.stringify(connectMessage));
-      _(lostMessages).keys().sort().forEach(function (key) {
-        socket.send(JSON.stringify(lostMessages[key]));
-      });
+      f.sendConnectMessage();
       f.connectSendButton();
       haveBeenConnected = true;
     });
@@ -621,6 +660,26 @@
       retryTimeout = setInterval(tryReconnect, 2000);
     };
     socket.on("message", f.messageReceived);
+  };
+  f.sendConnectMessage = function (password) {
+    var connectMessage = {};
+    if (haveBeenConnected && (boardUrl !== defaultBoardUrlText)) {
+      connectMessage.url = boardUrl;
+      connectMessage.forceUrl = true;
+    }
+    else {
+      connectMessage.url = f.createUrl();
+    }
+    if (password) {
+      connectMessage.password = password;
+    }
+    connectMessage.userToken = userToken;
+    if (socketHolder.socket) {
+      socketHolder.socket.send(JSON.stringify(connectMessage));
+      _(lostMessages).keys().sort().forEach(function (key) {
+        socketHolder.socket.send(JSON.stringify(lostMessages[key]));
+      });
+    }
   };
   (function () {
     var chattrrStyle, originalScrollTop, bodyStyle, chattrr; 

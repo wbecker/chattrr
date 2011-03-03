@@ -243,19 +243,20 @@
     var clientPasswordSetVar, needsPassword, password, multi;
     clientPasswordSetVar = f.getClientPasswordSetKey(client);
     multi = db.multi();
-    db.get(f.getUserPasswordVar(userToken), function (err, dbPassword) {
+    multi.get(f.getUserPasswordVar(userToken), function (err, dbPassword) {
       needsPassword = !!dbPassword;
       password = dbPassword;
     });
-    db.get(clientPasswordSetVar, function (err, isSet) {
+    multi.get(clientPasswordSetVar, function (err, isSet) {
       if (needsPassword && !isSet) {
         if (message.password === password) {
           db.set(clientPasswordSetVar, true);
           f.handleUrl(client, userToken, message);
         }
         else {
-          f.sendMessage(JSON.stringify({passwordFailed: true}),
-            client, serverName);
+          client.send(JSON.stringify({
+            passwordFailed: true
+          }));
         }
       }
       else {
@@ -422,7 +423,7 @@
       //handled elsewhere  
       message.forceUrl = message.forceUrl;
     }
-    else if (message.newPassword) {
+    else if (!_.isUndefined(message.newPassword)) {
       f.setPassword(client, userToken, message, urlId);
     }
     else if (message.minbs) {
@@ -459,7 +460,8 @@
   f.setPassword = function (client, userToken, message, urlId) {
     db.get(f.getUserPasswordVar(userToken), function (err, password) {
       var passwordExists = !!password;
-      if (!passwordExists || (password === message.password)) {
+      if ((!passwordExists && (message.password === "")) || 
+        (password === message.password)) {
         db.set(f.getUserPasswordVar(userToken), message.newPassword);
         f.sendMessage("Your password has now been set. You will be prompted " +
           "for this when you now start chattrr.", client, userToken, urlId);
