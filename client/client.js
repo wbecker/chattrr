@@ -464,12 +464,13 @@
       "open");
     f.showMessage("  4. '/clear' - clear your message history");
     f.showMessage("  5. '/flash {on,off}' - turn title flashing on or off");
-    f.showMessage("  6. '/force' - forces chattrr to talk on the " +
+    f.showMessage("  6. '/password - set a password for your account");
+    f.showMessage("  7. '/force' - forces chattrr to talk on the " +
       "current url, regardless of its activity");
-    f.showMessage("  7. '/minbs <number>' - set the minimum board size - " +
+    f.showMessage("  8. '/minbs <number>' - set the minimum board size - " +
       "when deciding which board to go to, don't go to boards with less " +
       "than this amount of people chatting.");
-    f.showMessage("  8. '/maxbs <number>' - set the maximum board size - " +
+    f.showMessage("  9. '/maxbs <number>' - set the maximum board size - " +
       "when deciding which board to go to, start a new one rather than go " +
       "to a board with more than this amount of people.");
   };
