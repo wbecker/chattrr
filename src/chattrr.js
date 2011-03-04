@@ -37,7 +37,7 @@
     db.bgsave();
   };
   f.sendRegularInfo = function () {
-    db.get(f.getNextUrlIdKey(), function (err, maxUrlId) {
+    db.get(f.getNextUrlIdVar(), function (err, maxUrlId) {
       var urlId, membersByUrlId, getUrls, memberAssigner;
       getUrls = db.multi();
       membersByUrlId = {};
@@ -47,7 +47,7 @@
         };
       };
       for (urlId = 1; urlId <= maxUrlId; urlId += 1) {
-        getUrls.smembers(f.getMembersKey(urlId), memberAssigner(urlId));
+        getUrls.smembers(f.getUrlMembersVar(urlId), memberAssigner(urlId));
       }
       getUrls.exec(function () {
         var urlId, clientCount, urlMessage, 
@@ -63,13 +63,13 @@
         urlsBySizeNames = new Array(urlsBySize.length);
         getUrls = db.multi();
         urlsBySize.forEach(function (urlId, index) {
-          getUrls.get(f.getUrlForUrlId(urlId), _(function (index, err, url) {
+          getUrls.get(f.getUrlForUrlIdVar(urlId), _(function (index, err, url) {
             urlsBySizeNames[index] = url;
           }).bind(this, index));
         });
         getUrls.exec(function () {
           var removeClients, clientId, client, clientIndex, 
-            getUrlSize, getMembersKey, memberStats, urlNamesOrdered;
+            getUrlSize, getUrlMembersVar, memberStats, urlNamesOrdered;
           memberStats = {};
           getUrlSize = function (urlId) {
             return membersByUrlId[urlId].length;
@@ -85,7 +85,7 @@
           for (urlId = 1; urlId <= maxUrlId; urlId += 1) {
             clientCount = membersByUrlId[urlId].length;
             urlMessage = JSON.stringify(memberStats[urlId]);
-            getMembersKey = f.getMembersKey(urlId);
+            getUrlMembersVar = f.getUrlMembersVar(urlId);
             for (clientIndex = 0; clientIndex < clientCount; clientIndex += 1) {
               clientId = membersByUrlId[urlId][clientIndex];
               client = clients[clientId];
@@ -93,7 +93,7 @@
                 client.send(urlMessage);
               }
               else {
-                removeClients.srem(getMembersKey, clientId);
+                removeClients.srem(getUrlMembersVar, clientId);
               }
             }
           }
@@ -207,14 +207,14 @@
   };
   f.handleUserToken = function (client, message) {
     var userToken = message.userToken, 
-      clientUserTokenVar = f.createClientUserTokenVar(client),
+      clientUserTokenVar = f.getClientUserTokenVar(client),
       userIdVar = f.getUserIdVar(userToken);
 
     if (userToken) {
       db.set(clientUserTokenVar, userToken);
-      db.get(f.createNameVar(userToken), function (err, res) {
+      db.get(f.getNameVar(userToken), function (err, res) {
         if (!res) {
-          db.incr(f.createAnonIndex(), function (err, res) {
+          db.incr(f.getAnonIndex(), function (err, res) {
             f.setName(userToken, anonymousName + res);
             db.set(userIdVar, res);
           });
@@ -224,7 +224,7 @@
           //when I was making them, make one!
           db.get(userIdVar, function (err, userId) {
             if (!userId) {
-              db.incr(f.createAnonIndex(), function (err, newUserId) {
+              db.incr(f.getAnonIndex(), function (err, newUserId) {
                 db.set(userIdVar, newUserId);
               });
             }
@@ -241,7 +241,7 @@
   };
   f.handlePassword = function (client, userToken, message) {
     var clientPasswordSetVar, needsPassword, password, multi;
-    clientPasswordSetVar = f.getClientPasswordSetKey(client);
+    clientPasswordSetVar = f.getClientPasswordSetVar(client);
     multi = db.multi();
     multi.get(f.getUserPasswordVar(userToken), function (err, dbPassword) {
       needsPassword = !!dbPassword;
@@ -267,12 +267,12 @@
   };
   f.handleUrl = function (client, userToken, message) {
     if (message.forceUrl) {
-      db.get(f.getClientUrlKey(client), function (err, urlId) {
+      db.get(f.getClientUrlVar(client), function (err, urlId) {
         var useUrl = function () {
           f.handleDecidedUrl(client, userToken, message, message.url);
         };
         if (urlId) {
-          db.srem(f.getMembersKey(urlId), client.sessionId, useUrl);
+          db.srem(f.getUrlMembersVar(urlId), client.sessionId, useUrl);
         }
         else {
           useUrl();
@@ -283,7 +283,7 @@
       f.decideUrl(client, userToken, message);
     }
     else {
-      db.get(f.getClientUrlKey(client), function (err, urlId) {
+      db.get(f.getClientUrlVar(client), function (err, urlId) {
         f.handleMessageContents(client, userToken, message, urlId);
       });
     }
@@ -318,9 +318,9 @@
         urlIds.push(urlId);
       };
       urlsToCheck.forEach(function (url, index) {
-        getHashes.get(f.getUrlIdForHashKey(hash.md5(url)), urlIdAssigner);
+        getHashes.get(f.getUrlIdForHashVar(hash.md5(url)), urlIdAssigner);
       });
-      getHashes.get(f.getMinBoardSizeVar(userToken), 
+      getHashes.get(f.getUserMinBoardSizeVar(userToken), 
         function (err, userMinBoardSize) {
           if (userMinBoardSize) {
             minBoardSizeToUse = userMinBoardSize;
@@ -330,7 +330,7 @@
           }
         }
       );
-      getHashes.get(f.getMaxBoardSizeVar(userToken), 
+      getHashes.get(f.getUserMaxBoardSizeVar(userToken), 
         function (err, userMaxBoardSize) {
           if (userMaxBoardSize) {
             maxBoardSizeToUse = userMaxBoardSize;
@@ -348,7 +348,7 @@
           urlCounts.push(members.length);
         };
         urlIds.forEach(function (urlId, index) {
-          getMembers.smembers(f.getMembersKey(urlId), urlCountAssigner);
+          getMembers.smembers(f.getUrlMembersVar(urlId), urlCountAssigner);
         });
         getMembers.exec(function () {
           var i, ii;
@@ -368,14 +368,14 @@
   };
   f.handleDecidedUrl = function (client, userToken, message, url) {
     logs.info("decided on " + url + " for " + f.formatAddress(client));
-    var urlHash, urlIdForHashKey;
+    var urlHash, urlIdForHashVar;
     urlHash = hash.md5(url);
-    urlIdForHashKey = f.getUrlIdForHashKey(urlHash);
-    db.get(urlIdForHashKey, function (err, urlId) {
+    urlIdForHashVar = f.getUrlIdForHashVar(urlHash);
+    db.get(urlIdForHashVar, function (err, urlId) {
       if (!urlId) {
-        db.incr(f.getNextUrlIdKey(), function (err, urlId) {
-          db.set(urlIdForHashKey, urlId);
-          db.set(f.getUrlForUrlId(urlId), url, function () {
+        db.incr(f.getNextUrlIdVar(), function (err, urlId) {
+          db.set(urlIdForHashVar, urlId);
+          db.set(f.getUrlForUrlIdVar(urlId), url, function () {
             f.handleNewUrl(client, userToken, message, urlId, url);
           });
         });
@@ -387,9 +387,9 @@
   };
   
   f.handleNewUrl = function (client, userToken, message, urlId, url) {
-    var userId, hasPass, multi, clientUrlKey = f.getClientUrlKey(client);
-    db.sadd(f.getMembersKey(urlId), client.sessionId);
-    db.set(clientUrlKey, urlId);
+    var userId, hasPass, multi, clientUrlVar = f.getClientUrlVar(client);
+    db.sadd(f.getUrlMembersVar(urlId), client.sessionId);
+    db.set(clientUrlVar, urlId);
     f.sendInitialHistory(client, userToken, urlId);
 
     multi = db.multi();
@@ -427,12 +427,12 @@
       f.setPassword(client, userToken, message, urlId);
     }
     else if (message.minbs) {
-      db.set(f.getMinBoardSizeVar(userToken), message.minbs);
+      db.set(f.getUserMinBoardSizeVar(userToken), message.minbs);
       f.sendMessage("You now go to boards that have at least " + 
         message.minbs + " people on them", client, userToken, urlId);
     }
     else if (message.maxbs) {
-      db.set(f.getMaxBoardSizeVar(userToken), message.maxbs);
+      db.set(f.getUserMaxBoardSizeVar(userToken), message.maxbs);
       f.sendMessage("You now will not go to boards that have at more than " + 
         message.maxbs + " people on them", client, userToken, urlId);
     }
@@ -443,7 +443,7 @@
         client, userToken, urlId);
     }
     else if (message.historyCount && (message.historyCount > 0)) {
-      db.set(f.getHistoryDepthVar(userToken), 
+      db.set(f.getUserHistoryDepthVar(userToken), 
         (message.historyCount > 20) ? 20 : message.historyCount, 
         function () {
           f.sendInitialHistory(client, userToken, urlId);
@@ -477,12 +477,12 @@
     var send = function (message) {
       client.send(message);
     };
-    db.get(f.getHistoryDepthVar(userToken), function (err, res) {
+    db.get(f.getUserHistoryDepthVar(userToken), function (err, res) {
       var historyDepth = 5;
       if (res) {
         historyDepth = parseInt(res, 10);
       }
-      db.lrange(f.getMessagesName(urlId), -historyDepth, -1, 
+      db.lrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
         function (err, res) {
           res.forEach(function (msgJson) {
             var message = JSON.parse(msgJson);
@@ -502,7 +502,7 @@
   };
   f.setName = function (userToken, name, cb) {
     var oldName, nameVar, multi;
-    nameVar = f.createNameVar(userToken);
+    nameVar = f.getNameVar(userToken);
     multi = db.multi();
     if (cb) {
       multi.get(nameVar, function (err, res) {
@@ -517,7 +517,7 @@
     multi.exec();
   }; 
   f.saveMessage = function (message, userToken, urlId) {
-    db.rpush(f.getMessagesName(urlId), 
+    db.rpush(f.getUrlMessagesVar(urlId), 
       JSON.stringify({
         userToken: userToken, 
         msg: message,
@@ -528,15 +528,15 @@
   f.sendMessage = function (toSend, client, userToken, urlId, broadcast, seq) {
     f.formatMessage(userToken, new Date(), toSend, seq, function (message) {
       if (broadcast) {
-        var getMembersKey = f.getMembersKey(urlId);
-        db.smembers(getMembersKey, function (err, clientSessionIds) {
+        var getUrlMembersVar = f.getUrlMembersVar(urlId);
+        db.smembers(getUrlMembersVar, function (err, clientSessionIds) {
           clientSessionIds.forEach(function (sessionId) {
             if (clients.hasOwnProperty(sessionId)) {
               clients[sessionId].send(message);
             }
             else {
               //Don't know "sessionId" anymore
-              db.srem(getMembersKey, sessionId);
+              db.srem(getUrlMembersVar, sessionId);
             }
           });
         });
@@ -564,7 +564,7 @@
     }
     else {
       multi = db.multi();
-      multi.get(f.createNameVar(userToken), function (err, userName) {
+      multi.get(f.getNameVar(userToken), function (err, userName) {
         name = userName;
       });
       multi.get(f.getUserIdVar(userToken), function (err, userId) {
@@ -583,14 +583,14 @@
     };
   };
   f.removeClient = function (client) {
-    var clientUrlKey = f.getClientUrlKey(client),
+    var clientUrlVar = f.getClientUrlVar(client),
         multi = db.multi();
-    multi.get(clientUrlKey, function (err, urlId) {
-      db.srem(f.getMembersKey(urlId), client.sessionId);
+    multi.get(clientUrlVar, function (err, urlId) {
+      db.srem(f.getUrlMembersVar(urlId), client.sessionId);
     });
-    multi.del(clientUrlKey);
-    multi.del(f.createClientUserTokenVar(client));
-    multi.del(f.getClientPasswordSetKey(client));
+    multi.del(clientUrlVar);
+    multi.del(f.getClientUserTokenVar(client));
+    multi.del(f.getClientPasswordSetVar(client));
     multi.exec();
   };
   f.formatAddress = function (client) {
@@ -603,37 +603,37 @@
   //Redis keys
   //"url:nextUrlId" - int 
   //  the id to use for the next url
-  f.getNextUrlIdKey = function () {
+  f.getNextUrlIdVar = function () {
     return "url:nextUrlId";
   };
   //"url:<urlId>":url" - string(url)
   //  the actual url for the urlId
-  f.getUrlForUrlId = function (urlId) {
+  f.getUrlForUrlIdVar = function (urlId) {
     return "url:" + urlId + ":url";
   };
   //"url:<urlHash>:urlId" - string(hash of url)
   //  the urlId for the given url's hash
-  f.getUrlIdForHashKey = function (urlHash) {
+  f.getUrlIdForHashVar = function (urlHash) {
     return "url:" + urlHash + ":urlId";
   };
   //"url:<urlId>:clients" - set(client.sessionId) 
   //  the clients currently viewing the given url
-  f.getMembersKey = function (urlId) {
+  f.getUrlMembersVar = function (urlId) {
     return "url:" + urlId + ":clients";
   };
   //"url:<urlId>:messages" - set(message json)
   //  the messages saved for the given url
-  f.getMessagesName = function (urlId) {
+  f.getUrlMessagesVar = function (urlId) {
     return "url:" + urlId + ":messages";
   };
   //"user:<userToken>:name" - string 
   //  the screen name for the given user
-  f.createNameVar = function (userToken) {
+  f.getNameVar = function (userToken) {
     return "user:" + userToken + ":name";
   };
   //"user:<userToken>:historyDepth" - int 
   //  how much history to show for the given user.
-  f.getHistoryDepthVar = function (userToken) {
+  f.getUserHistoryDepthVar = function (userToken) {
     return "user:" + userToken + ":historyDepth";
   };
   f.getUserIdVar = function (userToken) {
@@ -642,30 +642,30 @@
   f.getUserPasswordVar = function (userToken) {
     return "user:" + userToken + ":password";
   };
-  f.getMinBoardSizeVar = function (userToken) {
+  f.getUserMinBoardSizeVar = function (userToken) {
     return "user:" + userToken + ":minbs";
   };
-  f.getMaxBoardSizeVar = function (userToken) {
+  f.getUserMaxBoardSizeVar = function (userToken) {
     return "user:" + userToken + ":maxbs";
   };
   f.getUserFlashesVar = function (userToken) {
     return "user:" + userToken + ":flash";
   };
   //"user:uniqueId
-  f.createAnonIndex = function () {
+  f.getAnonIndex = function () {
     return "user:nextAnonId";
   };
   //"client:<client.sessionId>:userToken" - string 
   //  who the client actually is
-  f.createClientUserTokenVar = function (client) {
+  f.getClientUserTokenVar = function (client) {
     return "client:" + client.sessionId + ":userToken";
   };
   //"client:<client.sessionId>:url" - string 
   //  the url that the given client is viewing
-  f.getClientUrlKey = function (client) {
+  f.getClientUrlVar = function (client) {
     return "client:" + client.sessionId + ":url";
   };
-  f.getClientPasswordSetKey = function (client) {
+  f.getClientPasswordSetVar = function (client) {
     return "client:" + client.sessionId + ":pwset";
   };
 
