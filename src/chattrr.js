@@ -290,6 +290,10 @@
   };
   f.decideUrl = function (client, userToken, message) {
     var urlObj, host, pathname, paths, urlsToCheck, builtUrl;
+    if (message.url === "about://") {
+      f.handleDecidedUrl(client, userToken, message, everyoneUrl);
+      return;
+    }
     urlObj = urlLib.parse(message.url); 
     host = urlObj.protocol + "//" + urlObj.hostname;
     pathname = urlObj.pathname;
