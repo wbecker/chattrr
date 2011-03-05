@@ -25,6 +25,7 @@
       urlLib = require("url"),
       fs = require("fs"),
       util = require("util"),
+      jade = require("jade"),
       io, redis, hash, _, logs, express,
       db, server, socket, clients = {}, 
       bgsavesInterval, sendRegularInfoInterval, popularCount,
@@ -172,6 +173,46 @@
     server.configure(function () {
       server.use(express.staticProvider("client"));
     });
+    server.get("/log/:url", function (req, res) {
+      var url, start, end;
+      url = req.params.url;
+      start = req.query.start ? new Date(req.query.start) : new Date();
+      if (isNaN(start.getTime())) {
+        start = new Date();
+      }
+      end = req.query.end ? new Date(req.query.end) : new Date(0);
+      if (isNaN(end.getTime())) {
+        end = new Date(0);
+      }
+      res.write("<html><body><div>");
+      res.write("Looking at " + req.params.url + " from " + 
+        end.toLocaleDateString() + " to " +
+        start.toLocaleDateString());
+      res.write("</div>");
+      res.write("<table>");
+      db.get(f.getUrlIdForHashVar(hash.md5(url)), function (err, urlId) {
+        var historyDepth = 10;
+        db.lrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
+          function (err, messages) {
+            var multi = db.multi();
+            messages.forEach(function (msgJson) {
+              var msg = JSON.parse(msgJson);
+              multi.get(f.getUserNameVar(msg.userToken), function (err, name) {
+                res.write("<tr>");
+                res.write("<td>" + name);
+                res.write("<td>" + new Date(msg.time).toLocaleTimeString());
+                res.write("<td>" + msg.msg);
+                res.write("</tr>");
+              });
+            });
+            multi.exec(function () {
+              res.write("</table>");
+              res.end();
+            });
+          }
+        );
+      });
+    });
     server.get("/", function (req, res) {
       var url = req.url;
       if (url === "/") {
@@ -210,7 +251,7 @@
     if (userToken) {
       db.set(clientUserTokenVar, userToken);
       db.sadd(f.getUserOpenClientsVar(userToken), client.sessionId);
-      db.get(f.getNameVar(userToken), function (err, res) {
+      db.get(f.getUserNameVar(userToken), function (err, res) {
         if (!res) {
           db.incr(f.getAnonIndex(), function (err, res) {
             f.setName(userToken, anonymousName + res);
@@ -530,7 +571,7 @@
   };
   f.setName = function (userToken, name, cb) {
     var oldName, nameVar, multi;
-    nameVar = f.getNameVar(userToken);
+    nameVar = f.getUserNameVar(userToken);
     multi = db.multi();
     if (cb) {
       multi.get(nameVar, function (err, res) {
@@ -592,7 +633,7 @@
     }
     else {
       multi = db.multi();
-      multi.get(f.getNameVar(userToken), function (err, userName) {
+      multi.get(f.getUserNameVar(userToken), function (err, userName) {
         name = userName;
       });
       multi.get(f.getUserIdVar(userToken), function (err, userId) {
@@ -660,7 +701,7 @@
   };
   //"user:<userToken>:name" - string 
   //  the screen name for the given user
-  f.getNameVar = function (userToken) {
+  f.getUserNameVar = function (userToken) {
     return "user:" + userToken + ":name";
   };
   //"user:<userToken>:historyDepth" - int 
