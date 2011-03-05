@@ -1,0 +1,17 @@
+!!! 5
+html
+  head
+    link(rel="stylesheet", href="/log.css", type="text/css")
+    title #{url} - Chat history
+  body
+    h1 #{url} - Chat history
+    #range
+      span#start= start
+      span#to &nbsp;to&nbsp; 
+      span#end= end
+    #log
+    - each message in messages
+      .logEntry      
+        .name= message.name
+        .time= message.time
+        .msg= message.msg

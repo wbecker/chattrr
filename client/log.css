@@ -1,0 +1,19 @@
+.name,
+.time,
+.msg {
+  display: inline-block;
+  padding: 0 0.5em;
+}
+
+.name,
+.time {
+  overflow: hidden;
+  text-align: right;
+}
+.name {
+  width: 6em;
+}
+.msg {
+  text-align: left;
+  overflow: auto;
+}
