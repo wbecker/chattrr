@@ -212,6 +212,7 @@
 
     if (userToken) {
       db.set(clientUserTokenVar, userToken);
+      db.sadd(f.getUserOpenClientsVar(userToken), client.sessionId);
       db.get(f.getNameVar(userToken), function (err, res) {
         if (!res) {
           db.incr(f.getAnonIndex(), function (err, res) {
@@ -438,9 +439,23 @@
     }
     else if (!_.isUndefined(message.flash)) {
       db.set(f.getUserFlashesVar(userToken), message.flash === true); 
-      f.sendMessage("You have set title flashing " + 
-        ((message.flash === true) ? "on" : "off"), 
-        client, userToken, urlId);
+      db.smembers(f.getUserOpenClientsVar(userToken), 
+        function (err, clientIds) {
+	  clientIds.forEach(function (sessionId) {
+	    var openClient;
+            if (clients.hasOwnProperty(sessionId)) {
+	      openClient = client[sessionId];
+              openClient.send(JSON.stringify({
+                flash: (flashes ? flashes === "true" : true)
+              }));
+              f.sendMessage("You have set title flashing " + 
+                ((message.flash === true) ? "on" : "off"), 
+                openClient, userToken, urlId);
+	    }
+	  });
+        }
+      );
+ 
     }
     else if (message.historyCount && (message.historyCount > 0)) {
       db.set(f.getUserHistoryDepthVar(userToken), 
@@ -584,12 +599,16 @@
   };
   f.removeClient = function (client) {
     var clientUrlVar = f.getClientUrlVar(client),
+        clientUserTokenVar = f.getClientUserTokenVar(client),
         multi = db.multi();
     multi.get(clientUrlVar, function (err, urlId) {
       db.srem(f.getUrlMembersVar(urlId), client.sessionId);
     });
+    multi.get(clientUserTokenVar, function (err, userToken) {
+      db.srem(f.getUserOpenClientsVar(userToken), client.sessionId);
+    });
     multi.del(clientUrlVar);
-    multi.del(f.getClientUserTokenVar(client));
+    multi.del(clientUserTokenVar);
     multi.del(f.getClientPasswordSetVar(client));
     multi.exec();
   };
@@ -650,6 +669,9 @@
   };
   f.getUserFlashesVar = function (userToken) {
     return "user:" + userToken + ":flash";
+  };
+  f.getUserOpenClientsVar = function (userToken) {
+    return "user:" + userToken + ":clients";
   };
   //"user:uniqueId
   f.getAnonIndex = function () {
