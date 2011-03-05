@@ -196,8 +196,8 @@
       locals.messages = [];
       
       db.get(f.getUrlIdForHashVar(hash.md5(url)), function (err, urlId) {
-        db.zrangebyscore(f.getUrlMessagesVar(urlId), 
-          end.getTime(), start.getTime(),
+        db.zrevrangebyscore(f.getUrlMessagesVar(urlId), 
+          start.getTime(), end.getTime(),
           "limit", offset, amount,
           function (err, messages) {
             var multi = db.multi();
