@@ -146,26 +146,22 @@
         client.send(JSON.stringify({closing: true}));
       });
     }
-    (function () {
-      try {
-        server.close();
-        logs.info("Server shutdown cleanly.");
-      }
-      catch (e) {
-        logs.error("Problem closing server");
-        logs.error(e);
-      }
-    }());
-    (function () {
-      try {
-        db.save();
-        logs.info("Database saved.");
-      }
-      catch (e) {
-        logs.error("Problem closing database");
-        logs.error(e);
-      }
-    }());
+    try {
+      server.close();
+      logs.info("Server shutdown cleanly.");
+    }
+    catch (server_err) {
+      logs.error("Problem closing server");
+      logs.error(server_err);
+    }
+    try {
+      db.save();
+      logs.info("Database saved.");
+    }
+    catch (db_err) {
+      logs.error("Problem closing database");
+      logs.error(db_err);
+    }
     logs.info("Shutdown complete");
   };
   f.createServer = function () {
@@ -174,7 +170,7 @@
       server.use(express.staticProvider("client"));
     });
     server.get("/log/:url", function (req, res) {
-      var url, start, end;
+      var url, start, end, locals = {};
       url = req.params.url;
       start = req.query.start ? new Date(req.query.start) : new Date();
       if (isNaN(start.getTime())) {
@@ -184,30 +180,31 @@
       if (isNaN(end.getTime())) {
         end = new Date(0);
       }
-      res.write("<html><body><div>");
-      res.write("Looking at " + req.params.url + " from " + 
-        end.toLocaleDateString() + " to " +
-        start.toLocaleDateString());
-      res.write("</div>");
-      res.write("<table>");
+      locals.url = req.params.url;
+      locals.end = end.toLocaleDateString();
+      locals.start = start.toLocaleDateString();
+      locals.messages = [];
       db.get(f.getUrlIdForHashVar(hash.md5(url)), function (err, urlId) {
         var historyDepth = 10;
-        db.lrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
+        db.zrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
           function (err, messages) {
             var multi = db.multi();
             messages.forEach(function (msgJson) {
               var msg = JSON.parse(msgJson);
               multi.get(f.getUserNameVar(msg.userToken), function (err, name) {
-                res.write("<tr>");
-                res.write("<td>" + name);
-                res.write("<td>" + new Date(msg.time).toLocaleTimeString());
-                res.write("<td>" + msg.msg);
-                res.write("</tr>");
+                locals.messages.push({
+                  name: name,
+                  time: new Date(msg.time).toLocaleTimeString(),
+                  msg: msg.msg
+                });
               });
             });
             multi.exec(function () {
-              res.write("</table>");
-              res.end();
+              jade.renderFile("templates/renderLog.jade", {locals: locals}, 
+                function (err, html) {
+                  res.send(html);
+                }
+              );
             });
           }
         );
@@ -551,7 +548,7 @@
       if (res) {
         historyDepth = parseInt(res, 10);
       }
-      db.lrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
+      db.zrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
         function (err, res) {
           res.forEach(function (msgJson) {
             var message = JSON.parse(msgJson);
@@ -586,11 +583,13 @@
     multi.exec();
   }; 
   f.saveMessage = function (message, userToken, urlId) {
-    db.rpush(f.getUrlMessagesVar(urlId), 
+    var time = new Date();
+    db.zadd(f.getUrlMessagesVar(urlId), 
+      time.getTime(),
       JSON.stringify({
         userToken: userToken, 
         msg: message,
-        time: new Date()
+        time: time
       })
     );
   };
@@ -753,6 +752,9 @@
     sendRegularInfoIntervalObj = setInterval(f.sendRegularInfo, 
       sendRegularInfoInterval * 1000);
     f.addProcessHandlers();
+
+    //f.sortHistory();
+    //f.renameHistory();
     try {
       f.createServer();
     }
@@ -762,6 +764,34 @@
       logs.error(ex);
       process.exit(1);
     }
+  };
+  f.sortHistory = function () {
+    db.keys("url:*:messages", function (err, keys) {
+      keys.forEach(function (key) {
+        db.type(key, function (err, type) {
+          if (type === "list") {
+            db.lrange(key, 0, -1, function (err, values) {
+              util.log(key + " - " + values.length);
+              values.forEach(function (json) {
+                var value, time;
+                value = JSON.parse(json);
+                time = new Date(value.time).getTime();
+                util.log(key + "-s" + time + " " + json);
+                db.zadd(key + "-s", time, json);
+              });
+            });
+          }
+        });
+      });
+    });
+  };
+  f.renameHistory = function () {
+    db.keys("url:*:messages-s", function (err, keys) {
+      keys.forEach(function (key) {
+        util.log(key + " " + key.substring(0, key.length - 2));
+        db.rename(key, key.substring(0, key.length - 2));
+      });
+    });
   };
   fs.readFile("config", function (err, configText) {
     var c = {};
