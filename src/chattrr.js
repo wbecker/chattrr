@@ -470,8 +470,11 @@
       if ((!passwordExists && (message.password === "")) || 
         (password === message.password)) {
         db.set(f.getUserPasswordVar(userToken), message.newPassword);
-        f.sendMessage("Your password has now been set. You will be prompted " +
-          "for this when you now start chattrr.", client, userToken, urlId);
+        f.doOnOpenClients(userToken, function (openClient) {
+          f.sendMessage("Your password has now been set. You will be " +
+            " prompted for this when you now start chattrr.", 
+            openClient, userToken, urlId);
+        });
       }
       else {
         f.sendMessage("Your old password did not match your existing " +
