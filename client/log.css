@@ -1,7 +1,28 @@
+h1 {
+  text-align: center;
+}
+#range {
+  text-align: center;
+  font-size: 1.5em;
+  font-style: italic;
+}
+#controls {
+  text-align: center;
+}
+#controls input {
+  border: 1px solid black;
+  margin: 0.5em;
+}
+.log {
+  width: 100%;
+}
+.logEntry:nth-child(odd) {
+  background-color: #eeeeee;
+}
+
 .name,
 .time,
 .msg {
-  display: inline-block;
   padding: 0 0.5em;
 }
 
@@ -12,8 +33,14 @@
 }
 .name {
   width: 6em;
+  max-width: 11em;
+}
+.time {
+  min-width: 11em;
 }
 .msg {
   text-align: left;
   overflow: auto;
+  width: 100%;
 }
+

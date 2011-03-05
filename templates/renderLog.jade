@@ -21,12 +21,12 @@ html
       input(type="button", id="previous", value="previous")
       input(type="button", id="next", value="next", disabled="true")
       - }
-    #log
+  table.log(cellSpacing=0, cellPadding=0)
     - each message in messages
-      .logEntry      
-        .name= message.name
-        .time= message.time
-        .msg= message.msg
+        tr.logEntry      
+          td.name= message.name
+          td.time= message.time
+          td.msg= message.msg
     script(src="http://documentcloud.github.com/underscore/underscore-min.js");
     script(src="/log.js")
       
