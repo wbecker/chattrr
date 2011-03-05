@@ -430,13 +430,17 @@
     }
     else if (message.minbs) {
       db.set(f.getUserMinBoardSizeVar(userToken), message.minbs);
-      f.sendMessage("You now go to boards that have at least " + 
-        message.minbs + " people on them", client, serverName, urlId);
+      f.doOnOpenClients(userToken, function (openClient) {
+        f.sendMessage("You now go to boards that have at least " + 
+          message.minbs + " people on them", openClient, serverName, urlId);
+      });
     }
     else if (message.maxbs) {
       db.set(f.getUserMaxBoardSizeVar(userToken), message.maxbs);
-      f.sendMessage("You now will not go to boards that have at more than " + 
-        message.maxbs + " people on them", client, serverName, urlId);
+      f.doOnOpenClients(userToken, function (openClient) {
+        f.sendMessage("You now will not go to boards that have at more than " + 
+          message.maxbs + " people on them", openClient, serverName, urlId);
+      });
     }
     else if (!_.isUndefined(message.flash)) {
       db.set(f.getUserFlashesVar(userToken), message.flash === true); 
