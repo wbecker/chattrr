@@ -170,7 +170,7 @@
       server.use(express.staticProvider("client"));
     });
     server.get("/log/:url", function (req, res) {
-      var url, start, end, locals = {};
+      var url, start, end, offset, locals = {};
       url = req.params.url;
       start = req.query.start ? new Date(req.query.start) : new Date();
       if (isNaN(start.getTime())) {
@@ -180,13 +180,16 @@
       if (isNaN(end.getTime())) {
         end = new Date(0);
       }
+      offset = req.query.offset ? req.query.offset : 0;
       locals.url = req.params.url;
       locals.end = end.toLocaleDateString();
       locals.start = start.toLocaleDateString();
       locals.messages = [];
       db.get(f.getUrlIdForHashVar(hash.md5(url)), function (err, urlId) {
-        var historyDepth = 10;
-        db.zrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
+        var historyDepth = 20;
+        db.zrangebyscore(f.getUrlMessagesVar(urlId), 
+          end.getTime(), start.getTime(),
+          "limit", offset, historyDepth,
           function (err, messages) {
             var multi = db.multi();
             messages.forEach(function (msgJson) {
