@@ -204,9 +204,8 @@
             messages.forEach(function (msgJson) {
               var msg = JSON.parse(msgJson);
               multi.get(f.getUserNameVar(msg.userToken), function (err, name) {
-                var time, pad, timeString;
+                var time, timeString;
                 time = new Date(msg.time);
-                
                 timeString = time.getFullYear() + "-" + 
                   pad(time.getMonth() + 1) + "-" + 
                   pad(time.getDate()) + " " + 
