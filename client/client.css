@@ -40,6 +40,10 @@
   color: #000000;
   text-decoration: underline;
 }
+#chattrr_logo,
+#chattrr_topBarText {
+  float: left;
+}
 #chattrr_topBarUrls {
   float: right;
   padding-right: 2em;
@@ -182,7 +186,11 @@
 }
 #chattrr_inputArea {
   width: 100%;
-  padding-right: 4.5em;
+  padding-right: 5em;
+  padding-left: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  -webkit-box-sizing: padding-box;
   -moz-box-sizing: padding-box; 
   position: absolute;
 }
@@ -203,7 +211,7 @@
   position: absolute;
   right: 0;
   -moz-box-sizing: content-box;
-  padding: 0 1em 0 1em;
+  padding: 0;
   margin: 0;
   border-width: 0 0.25em;
   display: inline;
@@ -212,7 +220,7 @@
   font: 200 1em/1.2 Impact,"League Gothic",Haettenschweiler,sans-serif;
   -moz-border-radius: 0;
   background-image: none;
-  width: 2em;
+  width: 4.5em;
 } 
 #chattrr_in, #chattrr_send {
   font-size: inherit;
