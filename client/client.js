@@ -84,8 +84,8 @@
         justStarted = false;
       }, 5000);
     }
-    if (message.flash === "true") {
-      allowFlashing = true;
+    if (!_.isUndefined(message.flash)) {
+      allowFlashing = message.flash === true;
     }
     if (message.count) {
       f.showLurkers(message);
