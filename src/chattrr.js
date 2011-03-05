@@ -265,7 +265,7 @@
   };
   f.handleUrl = function (client, userToken, message) {
     if (message.forceUrl) {
-      db.get(f.getClientUrlVar(client), function (err, urlId) {
+      db.get(f.getClientUrlIdVar(client), function (err, urlId) {
         var useUrl = function () {
           f.handleDecidedUrl(client, userToken, message, message.url);
         };
@@ -281,7 +281,7 @@
       f.decideUrl(client, userToken, message);
     }
     else {
-      db.get(f.getClientUrlVar(client), function (err, urlId) {
+      db.get(f.getClientUrlIdVar(client), function (err, urlId) {
         f.handleMessageContents(client, userToken, message, urlId);
       });
     }
@@ -389,9 +389,9 @@
   };
   
   f.handleNewUrl = function (client, userToken, message, urlId, url) {
-    var userId, hasPass, multi, clientUrlVar = f.getClientUrlVar(client);
+    var userId, hasPass, multi, clientUrlIdVar = f.getClientUrlIdVar(client);
     db.sadd(f.getUrlMembersVar(urlId), client.sessionId);
-    db.set(clientUrlVar, urlId);
+    db.set(clientUrlIdVar, urlId);
     f.sendInitialHistory(client, userToken, urlId);
 
     multi = db.multi();
@@ -416,9 +416,16 @@
     if (message.name) {
       message.name = message.name.substring(0, 16);
       f.setName(userToken, message.name, function (oldName) {
-        var toSend = "\"" + oldName + "\" is now called \"" + 
-          message.name + "\"";
-        f.sendMessage(toSend, client, serverName, urlId, true);
+        f.doOnOpenClients(userToken, function (openClient) {
+          db.get(f.getClientUrlIdVar(openClient), 
+            function (err, urlIdForClient) {
+              var toSend = "\"" + oldName + "\" is now called \"" + 
+                message.name + "\"";
+              f.sendMessage(toSend, openClient, serverName, 
+                urlIdForClient, true);
+            }
+          );
+        });
       });
     }
     else if (message.forceUrl) {
@@ -610,7 +617,7 @@
     };
   };
   f.removeClient = function (client) {
-    var clientUrlVar = f.getClientUrlVar(client),
+    var clientUrlVar = f.getClientUrlIdVar(client),
         clientUserTokenVar = f.getClientUserTokenVar(client),
         multi = db.multi();
     multi.get(clientUrlVar, function (err, urlId) {
@@ -696,7 +703,7 @@
   };
   //"client:<client.sessionId>:url" - string 
   //  the url that the given client is viewing
-  f.getClientUrlVar = function (client) {
+  f.getClientUrlIdVar = function (client) {
     return "client:" + client.sessionId + ":url";
   };
   f.getClientPasswordSetVar = function (client) {
