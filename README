@@ -1,6 +1,6 @@
 Chattrr is a chat client that, when installed as a bookmarklet, brings up an area at the bottom of the current page where you can chat to others who are reading the same page.
 
-It runs on node and requires socket.io-node, redis, express, hashlib, winston and underscore.
+It runs on node and requires socket.io-node, redis (https://github.com/mranney/node_redis), express, hashlib, winston and underscore.
 
 It has been tested on firefox and chromium.
 
