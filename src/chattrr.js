@@ -404,10 +404,9 @@
         flash: (flashes ? flashes === "true" : true),
         userId: userId
       }));
-      f.sendMessage("Welcome to chattrr! You are talking on " + url, 
-        client, serverName, urlId);
-      f.sendMessage(" Type '/help' for more information", 
-        client, serverName, urlId);
+      f.sendAnnouncement("Welcome to chattrr! You are talking on " + url, 
+        client);
+      f.sendAnnouncement(" Type '/help' for more information", client);
       f.handleMessageContents(client, userToken, message, urlId);
     });
     multi.exec();
@@ -421,8 +420,7 @@
             function (err, urlIdForClient) {
               var toSend = "\"" + oldName + "\" is now called \"" + 
                 message.name + "\"";
-              f.sendMessage(toSend, openClient, serverName, 
-                urlIdForClient, true);
+              f.broadcastMessage(toSend, urlIdForClient, serverName);
             }
           );
         });
@@ -438,15 +436,15 @@
     else if (message.minbs) {
       db.set(f.getUserMinBoardSizeVar(userToken), message.minbs);
       f.doOnOpenClients(userToken, function (openClient) {
-        f.sendMessage("You now go to boards that have at least " + 
-          message.minbs + " people on them", openClient, serverName, urlId);
+        f.sendAnnouncement("You now go to boards that have at least " + 
+          message.minbs + " people on them", openClient);
       });
     }
     else if (message.maxbs) {
       db.set(f.getUserMaxBoardSizeVar(userToken), message.maxbs);
       f.doOnOpenClients(userToken, function (openClient) {
-        f.sendMessage("You now will not go to boards that have at more than " + 
-          message.maxbs + " people on them", openClient, serverName, urlId);
+        f.sendAnnouncement("You now will not go to boards that have more " +
+          "than " + message.maxbs + " people on them", openClient);
       });
     }
     else if (!_.isUndefined(message.flash)) {
@@ -455,9 +453,8 @@
         openClient.send(JSON.stringify({
           flash: (message.flash === true)
         }));
-        f.sendMessage("You have set title flashing " + 
-          ((message.flash === true) ? "on" : "off"), 
-          openClient, serverName, urlId);
+        f.sendAnnouncement("You have set title flashing " + 
+          ((message.flash === true) ? "on" : "off"), openClient);
       });
     }
     else if (message.historyCount && (message.historyCount > 0)) {
@@ -471,8 +468,7 @@
     else if (message.msg) {
       message.msg = message.msg.substring(0, 200);
       f.saveMessage(message.msg, userToken, urlId);
-      f.sendMessage(message.msg, client, userToken, urlId, true, 
-        message.seq);
+      f.broadcastMessage(message.msg, urlId, userToken, message.seq);
     }
   };
   f.setPassword = function (client, userToken, message, urlId) {
@@ -482,15 +478,13 @@
         (password === message.password)) {
         db.set(f.getUserPasswordVar(userToken), message.newPassword);
         f.doOnOpenClients(userToken, function (openClient) {
-          f.sendMessage("Your password has now been set. You will be " +
-            " prompted for this when you now start chattrr.", 
-            openClient, userToken, urlId);
+          f.sendAnnouncement("Your password has now been set. You will be " +
+            " prompted for this when you now start chattrr.", openClient);
         });
       }
       else {
-        f.sendMessage("Your old password did not match your existing " +
-          "password. Your new password has not been set.", client, 
-          userToken, urlId);
+        f.sendAnnouncement("Your old password did not match your existing " +
+          "password. Your new password has not been set.", client);
       }
     });
   };
@@ -559,25 +553,25 @@
       })
     );
   };
-  f.sendMessage = function (toSend, client, userToken, urlId, broadcast, seq) {
+  f.broadcastMessage = function (toSend, urlId, userToken, seq) {
     f.formatMessage(userToken, new Date(), toSend, seq, function (message) {
-      if (broadcast) {
-        var getUrlMembersVar = f.getUrlMembersVar(urlId);
-        db.smembers(getUrlMembersVar, function (err, clientSessionIds) {
-          clientSessionIds.forEach(function (sessionId) {
-            if (clients.hasOwnProperty(sessionId)) {
-              clients[sessionId].send(message);
-            }
-            else {
-              //Don't know "sessionId" anymore
-              db.srem(getUrlMembersVar, sessionId);
-            }
-          });
+      var getUrlMembersVar = f.getUrlMembersVar(urlId);
+      db.smembers(getUrlMembersVar, function (err, clientSessionIds) {
+        clientSessionIds.forEach(function (sessionId) {
+          if (clients.hasOwnProperty(sessionId)) {
+            clients[sessionId].send(message);
+          }
+          else {
+            //Don't know "sessionId" anymore
+            db.srem(getUrlMembersVar, sessionId);
+          }
         });
-      }
-      else {
-        client.send(message);
-      } 
+      });
+    });
+  };
+  f.sendAnnouncement = function (toSend, client) {
+    f.formatMessage(serverName, new Date(), toSend, null, function (message) {
+      client.send(message);
     });
   };
   f.formatMessage = function (userToken, time, message, seq, cb) {
