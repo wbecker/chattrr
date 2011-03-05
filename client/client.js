@@ -197,6 +197,7 @@
     nameHolder.textContent = message.name;
     idHolder.textContent = message.id;
     timeHolder.textContent = new Date(message.time).toLocaleTimeString();
+    timeHolder.title = new Date(message.time).toLocaleDateString();
     f.assignMessage(msgHolder, message.msg);
     holder.className = "chattrr_message";
 
