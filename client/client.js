@@ -138,7 +138,8 @@
 
     link = document.createElement("a");
     link.textContent = boardUrl;
-    link.href = boardUrl;
+    link.href = "http://" + myIp + ":" + port + "/log/" + 
+      encodeURIComponent(boardUrl) + "?offset=0";
     link.target = "_blank";
 
     topBarText.appendChild(text);
