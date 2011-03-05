@@ -68,8 +68,8 @@
           }).bind(this, index));
         });
         getUrls.exec(function () {
-          var removeClients, clientId, client, clientIndex, 
-            getUrlSize, getUrlMembersVar, memberStats, urlNamesOrdered;
+          var clientId, client, clientIndex, 
+            getUrlSize, memberStats, urlNamesOrdered;
           memberStats = {};
           getUrlSize = function (urlId) {
             return membersByUrlId[urlId].length;
@@ -81,11 +81,9 @@
               urls: _.zip(urlsBySizeNames, _(urlsBySize).map(getUrlSize))
             };
           }
-          removeClients = db.multi();
           for (urlId = 1; urlId <= maxUrlId; urlId += 1) {
             clientCount = membersByUrlId[urlId].length;
             urlMessage = JSON.stringify(memberStats[urlId]);
-            getUrlMembersVar = f.getUrlMembersVar(urlId);
             for (clientIndex = 0; clientIndex < clientCount; clientIndex += 1) {
               clientId = membersByUrlId[urlId][clientIndex];
               client = clients[clientId];
@@ -93,11 +91,10 @@
                 client.send(urlMessage);
               }
               else {
-                removeClients.srem(getUrlMembersVar, clientId);
+                f.removeClient({sessionId: clientId});
               }
             }
           }
-          removeClients.exec();
         });
       });
     });
@@ -434,32 +431,23 @@
     else if (message.minbs) {
       db.set(f.getUserMinBoardSizeVar(userToken), message.minbs);
       f.sendMessage("You now go to boards that have at least " + 
-        message.minbs + " people on them", client, userToken, urlId);
+        message.minbs + " people on them", client, serverName, urlId);
     }
     else if (message.maxbs) {
       db.set(f.getUserMaxBoardSizeVar(userToken), message.maxbs);
       f.sendMessage("You now will not go to boards that have at more than " + 
-        message.maxbs + " people on them", client, userToken, urlId);
+        message.maxbs + " people on them", client, serverName, urlId);
     }
     else if (!_.isUndefined(message.flash)) {
       db.set(f.getUserFlashesVar(userToken), message.flash === true); 
-      db.smembers(f.getUserOpenClientsVar(userToken), 
-        function (err, clientIds) {
-	  clientIds.forEach(function (sessionId) {
-	    var openClient;
-            if (clients.hasOwnProperty(sessionId)) {
-	      openClient = client[sessionId];
-              openClient.send(JSON.stringify({
-                flash: (flashes ? flashes === "true" : true)
-              }));
-              f.sendMessage("You have set title flashing " + 
-                ((message.flash === true) ? "on" : "off"), 
-                openClient, userToken, urlId);
-	    }
-	  });
-        }
-      );
- 
+      f.doOnOpenClients(userToken, function (openClient) {
+        openClient.send(JSON.stringify({
+          flash: (message.flash === true)
+        }));
+        f.sendMessage("You have set title flashing " + 
+          ((message.flash === true) ? "on" : "off"), 
+          openClient, serverName, urlId);
+      });
     }
     else if (message.historyCount && (message.historyCount > 0)) {
       db.set(f.getUserHistoryDepthVar(userToken), 
@@ -490,6 +478,19 @@
           "password. Your new password has not been set.", client, 
           userToken, urlId);
       }
+    });
+  };
+  f.doOnOpenClients = function (userToken, action) {
+    db.smembers(f.getUserOpenClientsVar(userToken), function (err, clientIds) {
+      clientIds.forEach(function (sessionId) {
+        var exists = clients.hasOwnProperty(sessionId);
+        if (exists) {
+          action(clients[sessionId]);
+        }
+        else {
+          db.srem(f.getUserOpenClientsVar(userToken), sessionId);
+        }
+      });
     });
   };
   f.sendInitialHistory = function (client, userToken, urlId) {
