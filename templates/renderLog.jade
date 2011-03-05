@@ -9,9 +9,24 @@ html
       span#start= start
       span#to &nbsp;to&nbsp; 
       span#end= end
+    #controls
+      - if (offset === 0) {
+      input(type="button", id="previous", value="previous", disabled="true")
+      input(type="button", id="next", value="next")
+      - } 
+      - else if (messages.length === amount) {
+      input(type="button", id="previous", value="previous")
+      input(type="button", id="next", value="next")
+      - } else { 
+      input(type="button", id="previous", value="previous")
+      input(type="button", id="next", value="next", disabled="true")
+      - }
     #log
     - each message in messages
       .logEntry      
         .name= message.name
         .time= message.time
         .msg= message.msg
+    script(src="http://documentcloud.github.com/underscore/underscore-min.js");
+    script(src="/log.js")
+      

@@ -170,7 +170,13 @@
       server.use(express.staticProvider("client"));
     });
     server.get("/log/:url", function (req, res) {
-      var url, start, end, offset, locals = {};
+      var url, start, end, offset, amount, pad, locals = {};
+      pad = function (x) {
+        if (x.toString().length === 1) {
+          return "0" + x;
+        }
+        return x.toString();
+      };
       url = req.params.url;
       start = req.query.start ? new Date(req.query.start) : new Date();
       if (isNaN(start.getTime())) {
@@ -180,24 +186,37 @@
       if (isNaN(end.getTime())) {
         end = new Date(0);
       }
-      offset = req.query.offset ? req.query.offset : 0;
+      offset = req.query.offset ? parseInt(req.query.offset, 10) : 0;
+      amount = 20;
       locals.url = req.params.url;
       locals.end = end.toLocaleDateString();
       locals.start = start.toLocaleDateString();
+      locals.offset = offset;
+      locals.amount = 20;
       locals.messages = [];
+      
       db.get(f.getUrlIdForHashVar(hash.md5(url)), function (err, urlId) {
-        var historyDepth = 20;
         db.zrangebyscore(f.getUrlMessagesVar(urlId), 
           end.getTime(), start.getTime(),
-          "limit", offset, historyDepth,
+          "limit", offset, amount,
           function (err, messages) {
             var multi = db.multi();
             messages.forEach(function (msgJson) {
               var msg = JSON.parse(msgJson);
               multi.get(f.getUserNameVar(msg.userToken), function (err, name) {
+                var time, pad, timeString;
+                time = new Date(msg.time);
+                
+                timeString = time.getFullYear() + "-" + 
+                  pad(time.getMonth() + 1) + "-" + 
+                  pad(time.getDate()) + " " + 
+                  pad(time.getHours()) + ":" + 
+                  pad(time.getMinutes()) + ":" + 
+                  pad(time.getSeconds());
+
                 locals.messages.push({
                   name: name,
-                  time: new Date(msg.time).toLocaleTimeString(),
+                  time: timeString,
                   msg: msg.msg
                 });
               });
