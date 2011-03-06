@@ -26,7 +26,8 @@
 }
 #chattrr_logo,
 #chattrr_topBarText,
-#chattrr_topBarUrls{
+#chattrr_topBarUrls,
+#chattrr_topBarShowUsers {
   font-family: sans-serif;
   font-size: 0.75em;
 }
@@ -35,10 +36,13 @@
 }
 #chattrr_topBarText a,
 #chattrr_topBarText a:visited,
+#chattrr_topBarShowUsers a,
+#chattrr_topBarShowUsers a:visited,
 #chattrr_logolink,
 #chattrr_logolink:visited {
   color: #000000;
   text-decoration: underline;
+  cursor: pointer;
 }
 #chattrr_logo,
 #chattrr_topBarText {
@@ -47,6 +51,10 @@
 #chattrr_topBarUrls {
   float: right;
   padding-right: 2em;
+}
+#chattrr_topBarShowUsers {
+  float: right;
+  margin-right: 10em;
 }
 #chattrr_out {
   position: absolute;

@@ -492,6 +492,9 @@
     else if (!_.isUndefined(message.newPassword)) {
       f.setPassword(client, userToken, message, urlId);
     }
+    else if (message.showUsers) {
+      f.showUsers(client, userToken, urlId);
+    }
     else if (message.minbs) {
       db.set(f.getUserMinBoardSizeVar(userToken), message.minbs);
       f.doOnOpenClients(userToken, function (openClient) {
@@ -545,6 +548,34 @@
         f.sendAnnouncement("Your old password did not match your existing " +
           "password. Your new password has not been set.", client);
       }
+    });
+  };
+  f.showUsers = function (client, userToken, urlId) {
+    var userNames = {};
+    db.smembers(f.getUrlMembersVar(urlId), function (err, members) {
+      var multiClients = db.multi(), multiUserNames = db.multi();
+      members.forEach(function (clientId) {
+        multiClients.get(f.getClientUserTokenVar({sessionId: clientId}), 
+          function (err, memberUserToken) {
+            var lastName;
+            multiUserNames.get(f.getUserNameVar(memberUserToken), 
+              function (err, name) {
+                lastName = name;
+              }
+            );
+            multiUserNames.get(f.getUserIdVar(userToken), 
+              function (err, id) {
+                userNames[lastName] = id;
+              }
+            );
+          }
+        );
+      });
+      multiClients.exec(function () {
+        multiUserNames.exec(function () {
+          client.send(JSON.stringify({users: userNames}));
+        });
+      });
     });
   };
   f.doOnOpenClients = function (userToken, action) {

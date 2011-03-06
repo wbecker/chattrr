@@ -93,6 +93,9 @@
     if (message.urls) {
       f.writePopularUrlsToDom(message);  
     }
+    if (message.users) {
+      f.showUsers(message);
+    }
     if (!message.msg) {
       return;
     }
@@ -144,6 +147,31 @@
 
     topBarText.appendChild(text);
     topBarText.appendChild(link);
+  };
+  f.showUsers = function (message) {
+    var users, infoHolder;
+    infoHolder = document.getElementById("chattrr_out_info_tablebody");
+    while (infoHolder.hasChildNodes()) {
+      infoHolder.removeChild(infoHolder.lastChild);
+    }
+    users = message.users;
+    _.keys(users).forEach(function (name) {
+      var line, url, link, nameCell, id;
+      line = document.createElement("tr");
+      line.className = "chattrr_out_info_line";
+      infoHolder.appendChild(line);
+
+      id = document.createElement("td");
+      id.className = "chattrr_out_info_line_users";
+      line.appendChild(id);
+
+      nameCell = document.createElement("td");
+      nameCell.className = "chattrr_out_info_line_url";
+      line.appendChild(nameCell);
+      
+      id.textContent = users[name];
+      nameCell.textContent = name;
+    });
   };
   f.writePopularUrlsToDom = function (message) {
     var infoHolder = document.getElementById("chattrr_out_info_tablebody");
@@ -343,6 +371,10 @@
         sendMessage = false;
         sendText = false;
       }
+      else if (text.match(/^\/users/)) {
+        f.requestUsers(msg);
+        sendText = false;
+      }
       else if (text.match(/^\/minbs /)) {
         f.grabMinBoardSize(msg, text.substring(7));
         sendText = false;
@@ -467,6 +499,7 @@
     f.showMessage("  4. '/clear' - clear your message history");
     f.showMessage("  5. '/flash {on,off}' - turn title flashing on or off");
     f.showMessage("  6. '/password - set a password for your account");
+    f.showMessage("  6. '/users - show who is on the channel");
     f.showMessage("  7. '/force' - forces chattrr to talk on the " +
       "current url, regardless of its activity");
     f.showMessage("  8. '/minbs <number>' - set the minimum board size - " +
@@ -475,6 +508,9 @@
     f.showMessage("  9. '/maxbs <number>' - set the maximum board size - " +
       "when deciding which board to go to, start a new one rather than go " +
       "to a board with more than this amount of people.");
+  };
+  f.requestUsers = function (msg) {
+    msg.showUsers = true;
   };
   f.grabMinBoardSize = function (msg, text) {
     var val = parseInt(text, 10);
@@ -714,7 +750,8 @@
     }
 
     (function () {
-      var topBar, logoText, logoTextLink, topBarText, urlsText; 
+      var topBar, logoText, logoTextLink, topBarText, urlsText, 
+        showUsers, userClick; 
       topBar = document.createElement("div");
       topBar.id = "chattrr_topBar";
       chattrr.appendChild(topBar);
@@ -739,6 +776,19 @@
       urlsText.id = "chattrr_topBarUrls";
       urlsText.textContent = "Top chattrrs";
       topBar.appendChild(urlsText);
+
+      showUsers = document.createElement("span");
+      showUsers.id = "chattrr_topBarShowUsers";
+      topBar.appendChild(showUsers);
+
+      userClick = document.createElement("a");
+      userClick.textContent = "Show Users";
+      userClick.addEventListener("click", function () {
+        if (socketHolder.socket && socketHolder.socket.connected) {
+          socketHolder.socket.send(JSON.stringify({showUsers: true}));
+        }
+      }, false);
+      showUsers.appendChild(userClick);
     }());
   
     (function () {
