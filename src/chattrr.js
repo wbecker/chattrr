@@ -632,46 +632,6 @@
       );
     });
   };
-  f.translateText = function (phrase, callback) {
-    var source = "en", target = "fr",
-      getTranslationVar = f.getTranslationVar(source, target);
-    //don't worry about case
-    db.hget(getTranslationVar, phrase, function (err, res) {
-      if (res) {
-        callback(res);
-        return;
-      }
-      var uri = "https://www.googleapis.com/language/translate/v2?" +
-        "key=AIzaSyCxTC4Qx_TsG8fGV1FsLxdeuxw_BsyXJJ4" +
-        "&q=" + encodeURIComponent(phrase) +
-        "&source=" + source +
-        "&target=" + target;
-      request({uri: uri}, function (err, response, body) {
-        var translation;
-        if (err) {
-          translation = phrase;
-        }
-        else if (body) {
-          try {
-            translation = JSON.parse(body)
-              .data.translations[0].translatedText;
-            logs.info("got translation from Google: " + 
-              phrase + " - " + translation);
-          }
-          catch (e) {
-            util.log("couldn't parse body of translate request");
-            util.log(body);
-            translation = phrase;
-          }
-        }
-        else {
-          translation = phrase;
-        }
-        db.hset(getTranslationVar, phrase, translation);
-        callback(translation);
-      });
-    });
-  };
   f.setName = function (userToken, name, cb) {
     var oldName, nameVar, multi;
     nameVar = f.getUserNameVar(userToken);
@@ -718,6 +678,46 @@
   f.sendAnnouncement = function (toSend, client) {
     f.formatMessage(serverName, new Date(), toSend, null, function (message) {
       client.send(message);
+    });
+  };
+  f.translateText = function (phrase, callback) {
+    var source = "en", target = "fr",
+      getTranslationVar = f.getTranslationVar(source, target);
+    //don't worry about case
+    db.hget(getTranslationVar, phrase, function (err, res) {
+      if (res) {
+        callback(res);
+        return;
+      }
+      var uri = "https://www.googleapis.com/language/translate/v2?" +
+        "key=AIzaSyCxTC4Qx_TsG8fGV1FsLxdeuxw_BsyXJJ4" +
+        "&q=" + encodeURIComponent(phrase) +
+        "&source=" + source +
+        "&target=" + target;
+      request({uri: uri}, function (err, response, body) {
+        var translation;
+        if (err) {
+          translation = phrase;
+        }
+        else if (body) {
+          try {
+            translation = JSON.parse(body)
+              .data.translations[0].translatedText;
+            logs.info("got translation from Google: " + 
+              phrase + " - " + translation);
+          }
+          catch (e) {
+            util.log("couldn't parse body of translate request");
+            util.log(body);
+            translation = phrase;
+          }
+        }
+        else {
+          translation = phrase;
+        }
+        db.hset(getTranslationVar, phrase, translation);
+        callback(translation);
+      });
     });
   };
   f.formatMessage = function (userToken, time, message, seq, cb) {
