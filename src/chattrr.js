@@ -563,7 +563,7 @@
                 lastName = name;
               }
             );
-            multiUserNames.get(f.getUserIdVar(userToken), 
+            multiUserNames.get(f.getUserIdVar(memberUserToken), 
               function (err, id) {
                 userNames[lastName] = id;
               }
