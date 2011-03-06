@@ -625,7 +625,7 @@
           };
           res.forEach(function (msgJson, messageIndex) {
             var message = JSON.parse(msgJson);
-            f.translateText(message.msg, 
+            f.translateText("fr", message.msg, 
               _.bind(translateDone, this, message, messageIndex));
           });
         }
@@ -680,9 +680,8 @@
       client.send(message);
     });
   };
-  f.translateText = function (phrase, callback) {
-    var source = "en", target = "fr",
-      getTranslationVar = f.getTranslationVar(source, target);
+  f.translateText = function (target, phrase, callback) {
+    var getTranslationVar = f.getTranslationVar(target);
     //don't worry about case
     db.hget(getTranslationVar, phrase, function (err, res) {
       if (res) {
@@ -692,7 +691,6 @@
       var uri = "https://www.googleapis.com/language/translate/v2?" +
         "key=AIzaSyCxTC4Qx_TsG8fGV1FsLxdeuxw_BsyXJJ4" +
         "&q=" + encodeURIComponent(phrase) +
-        "&source=" + source +
         "&target=" + target;
       request({uri: uri}, function (err, response, body) {
         var translation;
@@ -849,8 +847,8 @@
   f.getClientPasswordSetVar = function (client) {
     return "client:" + client.sessionId + ":pwset";
   };
-  f.getTranslationVar = function (source, target) {
-    return "trans:from:" + source + ":to:" + target;
+  f.getTranslationVar = function (target) {
+    return "trans-to:" + target;
   };
 
   //Start up
