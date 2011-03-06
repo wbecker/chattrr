@@ -22,6 +22,7 @@
 
 (function () {
   var http = require("http"), 
+      request = require("request"),
       urlLib = require("url"),
       fs = require("fs"),
       util = require("util"),
@@ -167,7 +168,7 @@
   f.createServer = function () {
     server = express.createServer();
     server.configure(function () {
-      server.use(express.staticProvider("client"));
+      server.use(express["static"]("client"));
     });
     server.get("/log/:url", function (req, res) {
       var url, start, end, offset, amount, pad, locals = {};
@@ -602,20 +603,73 @@
       }
       db.zrange(f.getUrlMessagesVar(urlId), -historyDepth, -1, 
         function (err, res) {
-          res.forEach(function (msgJson) {
+          var translateDone, translations = new Array(historyDepth), 
+              count = 0;
+          translateDone = function (message, messageIndex, translation) {
+            message.translation = translation;
+            translations[messageIndex] = message;
+            count += 1;
+            if (count === historyDepth) {
+              translations.forEach(function (message) {
+                f.formatMessage(
+                  message.userToken, 
+                  new Date(message.time), 
+                  message.translation, 
+                  null,
+                  function (toSend) {
+                    client.send(toSend);
+                  }
+                );
+              });
+            }
+          };
+          res.forEach(function (msgJson, messageIndex) {
             var message = JSON.parse(msgJson);
-            f.formatMessage(
-              message.userToken, 
-              new Date(message.time), 
-              message.msg, 
-              null,
-              function (toSend) {
-                client.send(toSend);
-              }
-            );
+            f.translateText(message.msg, 
+              _.bind(translateDone, this, message, messageIndex));
           });
         }
       );
+    });
+  };
+  f.translateText = function (phrase, callback) {
+    var source = "en", target = "fr",
+      getTranslationVar = f.getTranslationVar(source, target);
+    //don't worry about case
+    db.hget(getTranslationVar, phrase, function (err, res) {
+      if (res) {
+        callback(res);
+        return;
+      }
+      var uri = "https://www.googleapis.com/language/translate/v2?" +
+        "key=AIzaSyCxTC4Qx_TsG8fGV1FsLxdeuxw_BsyXJJ4" +
+        "&q=" + encodeURIComponent(phrase) +
+        "&source=" + source +
+        "&target=" + target;
+      request({uri: uri}, function (err, response, body) {
+        var translation;
+        if (err) {
+          translation = phrase;
+        }
+        else if (body) {
+          try {
+            translation = JSON.parse(body)
+              .data.translations[0].translatedText;
+            logs.info("got translation from Google: " + 
+              phrase + " - " + translation);
+          }
+          catch (e) {
+            util.log("couldn't parse body of translate request");
+            util.log(body);
+            translation = phrase;
+          }
+        }
+        else {
+          translation = phrase;
+        }
+        db.hset(getTranslationVar, phrase, translation);
+        callback(translation);
+      });
     });
   };
   f.setName = function (userToken, name, cb) {
@@ -794,6 +848,9 @@
   };
   f.getClientPasswordSetVar = function (client) {
     return "client:" + client.sessionId + ":pwset";
+  };
+  f.getTranslationVar = function (source, target) {
+    return "trans:from:" + source + ":to:" + target;
   };
 
   //Start up
