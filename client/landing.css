@@ -3,17 +3,21 @@ body {
 }
 div {
   padding: 20px;
+  /*
   -webkit-box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 60px rgba(0, 0, 0, 0.1) inset;
   -moz-box-shadow:   0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1) inset;
   box-shadow:        0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1) inset;
-  border:1px solid #efefef;
+  */
+  border:3px solid #efefef;
   -moz-border-radius:0 0 420px 420px / 0 0 6px 6px;
   border-radius:0 0 420px 420px / 0 0 6px 6px;
 }
 div:before {
+  /*
   -webkit-box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
   -moz-box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+  */
 
   -moz-border-radius: 100px 100px 100px 100px / 10px 10px 10px 10px;
   border-radius: 100px 100px 100px 100px / 10px 10px 10px 10px;
