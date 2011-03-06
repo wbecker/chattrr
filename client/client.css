@@ -201,6 +201,7 @@
   -webkit-box-sizing: padding-box;
   -moz-box-sizing: padding-box; 
   position: absolute;
+  border-width: 0;
 }
 #chattrr_in_password, 
 #chattrr_in {
