@@ -631,6 +631,7 @@
                   message.userToken, 
                   new Date(message.time), 
                   message.translation, 
+                  message.msg,
                   null,
                   function (toSend) {
                     client.send(toSend);
@@ -677,7 +678,7 @@
   };
   f.broadcastMessage = function (toSend, urlId, userToken, seq) {
     f.translateText(userToken, toSend, function (translation) {
-      f.formatMessage(userToken, new Date(), translation, seq, 
+      f.formatMessage(userToken, new Date(), translation, toSend, seq, 
         function (message) {
           var getUrlMembersVar = f.getUrlMembersVar(urlId);
           db.smembers(getUrlMembersVar, function (err, clientSessionIds) {
@@ -697,7 +698,7 @@
   };
   f.sendAnnouncement = function (toSend, userToken, client, callback) {
     f.translateText(userToken, toSend, function (translation) {
-      f.formatMessage(serverName, new Date(), translation, null, 
+      f.formatMessage(serverName, new Date(), translation, toSend, null, 
         function (message) {
           client.send(message);
           if (callback) {
@@ -770,14 +771,17 @@
       });
     });
   };
-  f.formatMessage = function (userToken, time, message, seq, cb) {
+  f.formatMessage = function (userToken, time, text, originalText, seq, cb) {
     var multi, name, formatter = function (name, id) {
       var msgObj = {
         name: name, 
         time: time.getTime(), 
-        msg: message,
+        msg: text,
         id: id
       };
+      if (originalText !== text) {
+        msgObj.origMsg = originalText;
+      }
       if (seq) {
         msgObj.seq = seq;
       }

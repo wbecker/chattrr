@@ -193,6 +193,9 @@
 .chattrr_message .chattrr_msgHolder a:hover {
   text-decoration: underline;
 }
+.chattrr_translatedText {
+  font-style: italic;
+}
 #chattrr_inputHolder {
   position: absolute;
   width: 100%;

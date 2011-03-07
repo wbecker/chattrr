@@ -243,6 +243,10 @@
     timeHolder.textContent = new Date(message.time).toLocaleTimeString();
     timeHolder.title = new Date(message.time).toLocaleDateString();
     f.assignMessage(msgHolder, message.msg);
+    if (message.origMsg) {
+      msgHolder.title = message.origMsg;
+      msgHolder.className += " chattrr_translatedText";
+    }
     holder.className = "chattrr_message";
 
     atBottom = (parent.scrollHeight - parent.clientHeight) <
