@@ -449,7 +449,8 @@
   };
   
   f.handleNewUrl = function (client, userToken, message, urlId, url) {
-    var userId, hasPass, multi, clientUrlIdVar = f.getClientUrlIdVar(client);
+    var userId, userLang, hasPass, multi, 
+      clientUrlIdVar = f.getClientUrlIdVar(client);
     db.sadd(f.getUrlMembersVar(urlId), client.sessionId);
     db.set(clientUrlIdVar, urlId);
     f.sendInitialHistory(client, userToken, urlId);
@@ -458,15 +459,20 @@
     multi.get(f.getUserIdVar(userToken), function (err, res) {
       userId = res;
     });
+    multi.get(f.getUserLanguage(userToken), function (err, res) {
+      userLang = res;
+    });
     multi.get(f.getUserFlashesVar(userToken), function (err, flashes) {
       client.send(JSON.stringify({
         url: url,
         flash: (flashes ? flashes === "true" : true),
-        userId: userId
+        userId: userId,
+        language: (userLang ? userLang : "en")
       }));
       f.sendAnnouncement("Welcome to chattrr! You are talking on " + url, 
+        userToken, client);
+      f.sendAnnouncement(" Type '/help' for more information", userToken, 
         client);
-      f.sendAnnouncement(" Type '/help' for more information", client);
       f.handleMessageContents(client, userToken, message, urlId);
     });
     multi.exec();
@@ -490,6 +496,9 @@
       //handled elsewhere  
       message.forceUrl = message.forceUrl;
     }
+    else if (message.language) {
+      f.setLanguage(client, userToken, message, urlId);
+    }
     else if (!_.isUndefined(message.newPassword)) {
       f.setPassword(client, userToken, message, urlId);
     }
@@ -500,14 +509,14 @@
       db.set(f.getUserMinBoardSizeVar(userToken), message.minbs);
       f.doOnOpenClients(userToken, function (openClient) {
         f.sendAnnouncement("You now go to boards that have at least " + 
-          message.minbs + " people on them", openClient);
+          message.minbs + " people on them", userToken, openClient);
       });
     }
     else if (message.maxbs) {
       db.set(f.getUserMaxBoardSizeVar(userToken), message.maxbs);
       f.doOnOpenClients(userToken, function (openClient) {
         f.sendAnnouncement("You now will not go to boards that have more " +
-          "than " + message.maxbs + " people on them", openClient);
+          "than " + message.maxbs + " people on them", userToken, openClient);
       });
     }
     else if (!_.isUndefined(message.flash)) {
@@ -517,7 +526,7 @@
           flash: (message.flash === true)
         }));
         f.sendAnnouncement("You have set title flashing " + 
-          ((message.flash === true) ? "on" : "off"), openClient);
+          ((message.flash === true) ? "on" : "off"), userToken, openClient);
       });
     }
     else if (message.historyCount && (message.historyCount > 0)) {
@@ -534,6 +543,11 @@
       f.broadcastMessage(message.msg, urlId, userToken, message.seq);
     }
   };
+  f.setLanguage = function (client, userToken, message, urlId) {
+    db.set(f.getUserLanguage(userToken), message.language, function (err, res) {
+      f.sendInitialHistory(client, userToken, urlId);
+    });
+  };
   f.setPassword = function (client, userToken, message, urlId) {
     db.get(f.getUserPasswordVar(userToken), function (err, password) {
       var passwordExists = !!password;
@@ -542,12 +556,13 @@
         db.set(f.getUserPasswordVar(userToken), message.newPassword);
         f.doOnOpenClients(userToken, function (openClient) {
           f.sendAnnouncement("Your password has now been set. You will be " +
-            " prompted for this when you now start chattrr.", openClient);
+            " prompted for this when you now start chattrr.", 
+            userToken, openClient);
         });
       }
       else {
         f.sendAnnouncement("Your old password did not match your existing " +
-          "password. Your new password has not been set.", client);
+          "password. Your new password has not been set.", userToken, client);
       }
     });
   };
@@ -625,7 +640,7 @@
           };
           res.forEach(function (msgJson, messageIndex) {
             var message = JSON.parse(msgJson);
-            f.translateText("fr", message.msg, 
+            f.translateText(userToken, message.msg, 
               _.bind(translateDone, this, message, messageIndex));
           });
         }
@@ -660,61 +675,71 @@
     );
   };
   f.broadcastMessage = function (toSend, urlId, userToken, seq) {
-    f.formatMessage(userToken, new Date(), toSend, seq, function (message) {
-      var getUrlMembersVar = f.getUrlMembersVar(urlId);
-      db.smembers(getUrlMembersVar, function (err, clientSessionIds) {
-        clientSessionIds.forEach(function (sessionId) {
-          if (clients.hasOwnProperty(sessionId)) {
-            clients[sessionId].send(message);
-          }
-          else {
-            //Don't know "sessionId" anymore
-            db.srem(getUrlMembersVar, sessionId);
-          }
-        });
-      });
-    });
-  };
-  f.sendAnnouncement = function (toSend, client) {
-    f.formatMessage(serverName, new Date(), toSend, null, function (message) {
-      client.send(message);
-    });
-  };
-  f.translateText = function (target, phrase, callback) {
-    var getTranslationVar = f.getTranslationVar(target);
-    //don't worry about case
-    db.hget(getTranslationVar, phrase, function (err, res) {
-      if (res) {
-        callback(res);
-        return;
-      }
-      var uri = "https://www.googleapis.com/language/translate/v2?" +
-        "key=AIzaSyCxTC4Qx_TsG8fGV1FsLxdeuxw_BsyXJJ4" +
-        "&q=" + encodeURIComponent(phrase) +
-        "&target=" + target;
-      request({uri: uri}, function (err, response, body) {
-        var translation;
-        if (err) {
-          translation = phrase;
+    f.translateText(userToken, toSend, function (translation) {
+      f.formatMessage(userToken, new Date(), translation, seq, 
+        function (message) {
+          var getUrlMembersVar = f.getUrlMembersVar(urlId);
+          db.smembers(getUrlMembersVar, function (err, clientSessionIds) {
+            clientSessionIds.forEach(function (sessionId) {
+              if (clients.hasOwnProperty(sessionId)) {
+                clients[sessionId].send(message);
+              }
+              else {
+                //Don't know "sessionId" anymore
+                db.srem(getUrlMembersVar, sessionId);
+              }
+            });
+          });
         }
-        else if (body) {
-          try {
-            translation = JSON.parse(body)
-              .data.translations[0].translatedText;
-            logs.info("got translation from Google: " + 
-              phrase + " - " + translation);
-          }
-          catch (e) {
-            util.log("couldn't parse body of translate request");
-            util.log(body);
+      );
+    });
+  };
+  f.sendAnnouncement = function (toSend, userToken, client) {
+    f.translateText(userToken, toSend, function (translation) {
+      f.formatMessage(serverName, new Date(), translation, null, 
+        function (message) {
+          client.send(message);
+        }
+      );
+    });
+  };
+  f.translateText = function (userToken, phrase, callback) {
+    db.get(f.getUserLanguage(userToken), function (err, target) {
+      var getTranslationVar = f.getTranslationVar(target);
+      //don't worry about case
+      db.hget(getTranslationVar, phrase, function (err, res) {
+        if (res) {
+          callback(res);
+          return;
+        }
+        var uri = "https://www.googleapis.com/language/translate/v2?" +
+          "key=AIzaSyCxTC4Qx_TsG8fGV1FsLxdeuxw_BsyXJJ4" +
+          "&q=" + encodeURIComponent(phrase) +
+          "&target=" + target;
+        request({uri: uri}, function (err, response, body) {
+          var translation;
+          if (err) {
             translation = phrase;
           }
-        }
-        else {
-          translation = phrase;
-        }
-        db.hset(getTranslationVar, phrase, translation);
-        callback(translation);
+          else if (body) {
+            try {
+              translation = JSON.parse(body)
+                .data.translations[0].translatedText;
+              logs.info("got translation from Google: " + 
+                phrase + " - " + translation);
+            }
+            catch (e) {
+              util.log("couldn't parse body of translate request");
+              util.log(body);
+              translation = phrase;
+            }
+          }
+          else {
+            translation = phrase;
+          }
+          db.hset(getTranslationVar, phrase, translation);
+          callback(translation);
+        });
       });
     });
   };
@@ -829,6 +854,9 @@
   };
   f.getUserOpenClientsVar = function (userToken) {
     return "user:" + userToken + ":clients";
+  };
+  f.getUserLanguage = function (userToken) {
+    return "user:" + userToken + ":languages";
   };
   //"user:uniqueId
   f.getAnonIndex = function () {

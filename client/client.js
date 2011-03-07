@@ -87,6 +87,9 @@
     if (!_.isUndefined(message.flash)) {
       allowFlashing = message.flash === true;
     }
+    if (message.language) {
+      f.setLanguage(message);
+    }
     if (message.count) {
       f.showLurkers(message);
     }
@@ -129,7 +132,19 @@
     }, false);
     field.focus();
   };
-
+  f.setLanguage = function (message) {
+    var select, lang, options, option, i, ii;
+    select = document.getElementById("chattrr_languageSelect");
+    lang = message.language;
+    options = select.options;
+    for (i = 0, ii = options.length; i < ii; i += 1) {
+      option = select.options[i];
+      if (option.value === lang) {
+        option.selected = true;
+        break;
+      }
+    }
+  };
   f.showLurkers = function (message) {
     var text, link, topBarText;
     topBarText = document.getElementById("chattrr_topBarText");
@@ -900,6 +915,7 @@
       topBar.appendChild(topBarLanguage);
 
       languageSelect = document.createElement("select");
+      languageSelect.id = "chattrr_languageSelect"; 
       topBarLanguage.appendChild(languageSelect);
       for (name in languages) {
         if (languages.hasOwnProperty(name)) {
