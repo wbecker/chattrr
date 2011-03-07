@@ -703,6 +703,23 @@
       );
     });
   };
+  f.replaceHtmlEntities = (function () {
+    var translate_re = /&(nbsp|amp|quot|lt|gt|#39);/g,
+      translate = {
+      "nbsp": " ", 
+      "amp" : "&", 
+      "quot": "\"",
+      "lt"  : "<", 
+      "#39"  : "'", 
+      "gt"  : ">"
+    };
+    return function (s) {
+      return (s.replace(translate_re, function (match, entity) { 
+        return translate[entity]; 
+      }));
+    };
+  }());
+
   f.translateText = function (userToken, phrase, callback) {
     db.get(f.getUserLanguage(userToken), function (err, target) {
       var getTranslationVar = f.getTranslationVar(target);
@@ -725,11 +742,13 @@
             try {
               translation = JSON.parse(body)
                 .data.translations[0].translatedText;
+              translation = f.replaceHtmlEntities(translation);
               logs.info("got translation from Google: " + 
                 phrase + " - " + translation);
             }
             catch (e) {
               util.log("couldn't parse body of translate request");
+              util.log(e);
               util.log(body);
               translation = phrase;
             }
