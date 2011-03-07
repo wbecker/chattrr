@@ -730,6 +730,15 @@
       });
     }
   };
+  f.selectLanguage = function (event) {
+    var select = event.target, 
+      value = select.options[select.selectedIndex].value;
+    if (socketHolder.socket) {
+      socketHolder.socket.send(JSON.stringify({
+        language: value
+      }));
+    }
+  };
   (function () {
     var chattrrStyle, originalScrollTop, bodyStyle, chattrr; 
     chattrrStyle = document.createElement("link");
@@ -751,6 +760,7 @@
 
     (function () {
       var topBar, logoText, logoTextLink, topBarText, urlsText, 
+        languages, topBarLanguage, languageSelect, name, option,
         showUsers, userClick; 
       topBar = document.createElement("div");
       topBar.id = "chattrr_topBar";
@@ -772,6 +782,138 @@
       topBarText.textContent = "Welcome to Chattrr";
       topBar.appendChild(topBarText);
 
+      languages = {
+        AFRIKAANS: "af", 
+        ALBANIAN: "sq", 
+        AMHARIC: "am", 
+        ARABIC: "ar", 
+        ARMENIAN: "hy", 
+        AZERBAIJANI: "az", 
+        BASQUE: "eu", 
+        BELARUSIAN: "be",
+        BENGALI: "bn", 
+        BIHARI: "bh", 
+        BULGARIAN: "bg", 
+        BURMESE: "my", 
+        BRETON:  "br", 
+        CATALAN: "ca", 
+        CHEROKEE: "chr", 
+        CHINESE: "zh", 
+        CHINESE_SIMPLIFIED: "zh-CN", 
+        CHINESE_TRADITIONAL: "zh-TW",
+        CORSICAN: "co", 
+        CROATIAN: "hr", 
+        CZECH: "cs", 
+        DANISH: "da",
+        DHIVEHI: "dv", 
+        DUTCH: "nl", 
+        ENGLISH: "en", 
+        ESPERANTO: "eo",
+        ESTONIAN: "et", 
+        FAROESE: "fo", 
+        FILIPINO: "tl", 
+        FINNISH: "fi",
+        FRENCH: "fr", 
+        FRISIAN: "fy", 
+        GALICIAN: "gl", 
+        GEORGIAN: "ka", 
+        GERMAN: "de", 
+        GREEK: "el", 
+        GUJARATI: "gu", 
+        HAITIAN_CREOLE: "ht", 
+        HEBREW: "iw", 
+        HINDI: "hi", 
+        HUNGARIAN: "hu", 
+        ICELANDIC: "is", 
+        INDONESIAN: "id", 
+        INUKTITUT: "iu", 
+        IRISH: "ga", 
+        ITALIAN: "it", 
+        JAPANESE: "ja", 
+        JAVANESE: "jw", 
+        KANNADA: "kn", 
+        KAZAKH: "kk", 
+        KHMER: "km", 
+        KOREAN: "ko", 
+        KURDISH: "ku", 
+        KYRGYZ: "ky", 
+        LAO: "lo", 
+        LAOTHIAN: "lo", 
+        LATIN: "la", 
+        LATVIAN: "lv", 
+        LITHUANIAN: "lt", 
+        LUXEMBOURGISH: "lb", 
+        MACEDONIAN: "mk", 
+        MALAY: "ms", 
+        MALAYALAM: "ml", 
+        MALTESE: "mt", 
+        MAORI: "mi", 
+        MARATHI: "mr", 
+        MONGOLIAN: "mn", 
+        NEPALI: "ne", 
+        NORWEGIAN: "no", 
+        OCCITAN: "oc", 
+        ORIYA: "or", 
+        PASHTO: "ps", 
+        PERSIAN: "fa",  
+        POLISH: "pl", 
+        PORTUGUESE: "pt", 
+        PORTUGUESE_PORTUGAL: "pt-PT", 
+        PUNJABI: "pa", 
+        QUECHUA: "qu", 
+        ROMANIAN: "ro", 
+        RUSSIAN: "ru", 
+        SANSKRIT: "sa", 
+        SCOTS_GAELIC: "gd", 
+        SERBIAN: "sr", 
+        SINDHI: "sd", 
+        SINHALESE: "si", 
+        SLOVAK: "sk", 
+        SLOVENIAN: "sl", 
+        SPANISH: "es", 
+        SUNDANESE: "su", 
+        SWAHILI: "sw", 
+        SWEDISH: "sv", 
+        SYRIAC: "syr", 
+        TAJIK: "tg", 
+        TAMIL: "ta", 
+        TAGALOG: "tl", 
+        TATAR: "tt", 
+        TELUGU: "te", 
+        THAI: "th", 
+        TIBETAN: "bo", 
+        TONGA: "to",
+        TURKISH: "tr",
+        UKRAINIAN: "uk",
+        URDU: "ur", 
+        UZBEK: "uz", 
+        UIGHUR: "ug", 
+        VIETNAMESE: "vi", 
+        WELSH: "cy",
+        YIDDISH: "yi", 
+        YORUBA: "yo"
+      }; 
+      
+      topBarLanguage = document.createElement("span");
+      topBarLanguage.id = "chattrr_language";
+      topBarLanguage.textContent = "Chatting in";
+      topBar.appendChild(topBarLanguage);
+
+      languageSelect = document.createElement("select");
+      topBarLanguage.appendChild(languageSelect);
+      for (name in languages) {
+        if (languages.hasOwnProperty(name)) {
+          option = document.createElement("option");
+          option.value = languages[name];
+          option.textContent = name.substring(0, 1) + 
+            name.substring(1).toLowerCase().replace("_", " ");
+          if (languages[name] === "en") {
+            option.selected = true;
+          }
+          languageSelect.appendChild(option);
+        }
+      }
+      languageSelect.addEventListener("change", f.selectLanguage, false);
       urlsText = document.createElement("span");
       urlsText.id = "chattrr_topBarUrls";
       urlsText.textContent = "Top chattrrs";
