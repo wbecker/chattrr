@@ -798,6 +798,7 @@
       topBar.appendChild(topBarText);
 
       languages = {
+        LITERAL_TEXT: "none",
         AFRIKAANS: "af", 
         ALBANIAN: "sq", 
         //AMHARIC: "am", 
@@ -923,7 +924,7 @@
           option.value = languages[name];
           option.textContent = name.substring(0, 1) + 
             name.substring(1).toLowerCase().replace("_", " ");
-          if (languages[name] === "en") {
+          if (languages[name] === "none") {
             option.selected = true;
           }
           languageSelect.appendChild(option);

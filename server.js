@@ -726,6 +726,10 @@
 
   f.translateText = function (userToken, phrase, callback) {
     db.get(f.getUserLanguage(userToken), function (err, target) {
+      if (target === "none") {
+        callback(phrase);
+        return;
+      }
       var getTranslationVar = f.getTranslationVar(target);
       //don't worry about case
       db.hget(getTranslationVar, phrase, function (err, res) {
