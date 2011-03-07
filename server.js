@@ -453,7 +453,6 @@
       clientUrlIdVar = f.getClientUrlIdVar(client);
     db.sadd(f.getUrlMembersVar(urlId), client.sessionId);
     db.set(clientUrlIdVar, urlId);
-    f.sendInitialHistory(client, userToken, urlId);
 
     multi = db.multi();
     multi.get(f.getUserIdVar(userToken), function (err, res) {
@@ -472,7 +471,9 @@
       f.sendAnnouncement("Welcome to chattrr! You are talking on " + url, 
         userToken, client);
       f.sendAnnouncement(" Type '/help' for more information", userToken, 
-        client);
+        client, function () {
+          f.sendInitialHistory(client, userToken, urlId);
+        });
       f.handleMessageContents(client, userToken, message, urlId);
     });
     multi.exec();
@@ -694,11 +695,14 @@
       );
     });
   };
-  f.sendAnnouncement = function (toSend, userToken, client) {
+  f.sendAnnouncement = function (toSend, userToken, client, callback) {
     f.translateText(userToken, toSend, function (translation) {
       f.formatMessage(serverName, new Date(), translation, null, 
         function (message) {
           client.send(message);
+          if (callback) {
+            callback(message);
+          }
         }
       );
     });
